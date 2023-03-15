@@ -1,6 +1,6 @@
 const users = [];
 
-function joinuser(id, name, room){
+function joinUser(id, name, room){
     const user = {id, name, room};
 
     users.push(user);
@@ -8,6 +8,19 @@ function joinuser(id, name, room){
     return user;
 }
 
-function getCurrentUser(id){
-    users.find(user => user.id == id)
+function currentUser(id){
+    return users.find(user => user.id === id);
 }
+
+function userLeft(id){
+    const index = users.findIndex(user => user.id === id);
+    if(index !== 1){
+        return users.splice(index, 1)[0];
+    }
+}
+
+function roomUsers(room){
+    return users.filter(user => user.room === room);
+
+}
+module.exports = {joinUser, currentUser, userLeft ,roomUsers};
