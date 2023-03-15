@@ -16,16 +16,21 @@ const adminName = 'Admin';
 app.use(express.static(path.join(__dirname, 'public')));
 
 io.on('connection', socket =>{
-    socket.emit('msg', formatMsg(adminName, 'Welcome!'));
 
+    socket.on('joinroom', ({username, room}) => {
+
+    socket.emit('msg', formatMsg(adminName, 'Welcome!'));
     socket.broadcast.emit('msg', formatMsg(adminName, 'some1 has joined the chat'));
 
+    });
+    
+    
     socket.on('disconnect', () => {
         io.emit('msg', formatMsg(adminName,'some1 disconnected'));
-    });
 
     socket.on('chatmsg', (msg) => {
         io.emit('msg', formatMsg('User', msg));
+    });
     });
 });
 

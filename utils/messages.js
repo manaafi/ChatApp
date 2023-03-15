@@ -8,4 +8,4 @@ function formatMsg(username, text){
     };
 }
 
-modules.exports = formatMsg;
+module.exports = formatMsg;
