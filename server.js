@@ -1,5 +1,5 @@
 const path = require('path');
-
+const mongoose = require('mongoose');
 const http = require('http');
 const express = require('express');
 
@@ -7,6 +7,26 @@ const socketio = require('socket.io');
 const { disconnect } = require('process');
 
 const app = express();
+app.use(express.json());
+
+require('dotenv').config();
+const mongoString = process.env.DATABASE_URL;
+
+mongoose.connect(mongoString);
+const database = mongoose.connection;
+
+database.on('error', (error) => {
+    console.log(error)
+})
+
+database.once('connected', () => {
+    console.log('Database Connected');
+})
+
+
+const routes = require('./routes/routes');
+app.use('/api', routes);
+
 const server = http.createServer(app);
 const io = socketio(server);
 const formatMsg = require('./utils/messages');
