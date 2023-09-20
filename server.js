@@ -2,11 +2,32 @@ const path = require('path');
 
 const http = require('http');
 const express = require('express');
+const mongoose = require('mongoose');
 
 const socketio = require('socket.io');
 const { disconnect } = require('process');
 
 const app = express();
+
+mongoose.connect("mongodb://127.0.0.1:27017/chatapp");
+
+const UserSchema = new mongoose.Schema({
+    email: String,
+    name: String,
+    password: String
+})
+
+const UserModel = mongoose.model("users", UserSchema)
+
+app.get("/users", (req,res) => {
+    UserModel.find({}).then(function(users) {
+        res.json(users)
+    }).catch(function(err) {
+        console.log(err)
+    })
+})
+
+
 const server = http.createServer(app);
 const io = socketio(server);
 const formatMsg = require('./utils/messages');
