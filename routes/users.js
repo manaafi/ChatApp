@@ -1,0 +1,56 @@
+const jwt = require("jsonwebtoken");
+const { UserModel, validate } = require("../models/user");
+const express = require("express");
+const router = express.Router();
+
+router.post("/signup", async (req, res) => {
+  // First Validate The Request
+  //console.log(req.body)
+  const { error } = validate(req.body);
+  if (error) {
+    return res.status(400).send(error.details[0].message);
+  }
+
+  // Check if this user already exisits
+  let user = await UserModel.findOne({ email: req.body.email });
+  if (user) {
+    //console.log(user.password);
+    return res.status(400).send("That user already exisits!");
+  } else {
+    // Insert the new user if they do not exist yet
+    user = new UserModel({
+      name: req.body.name,
+      email: req.body.email,
+      password: req.body.password,
+    });
+    await user.save();
+    res.send(user);
+  }
+});
+
+router.post("/login", async (req, res) => {
+  let user = await UserModel.findOne({ email: req.body.email });
+  if (user) {
+    if (req.body.password == user.password) {
+      let token;
+      try {
+        token = jwt.sign(
+          { userId: user.id, email: user.email },
+          "secretkeyappearshere",
+          { expiresIn: "1h" }
+        );
+        return res.status(200).send({ token: token });
+      } catch (err) {
+        console.log(err);
+        const error = new Error("Error! Something went wrong.");
+        return (error);
+      }
+    } else {
+      return res.status(400).send({ response: "Wrong password" });
+    }
+  } else {
+    return res.status(400).send({ response: "Account does not exist" });
+  }
+});
+
+module.exports = router;
