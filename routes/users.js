@@ -3,6 +3,8 @@ const { UserModel, validate } = require("../models/user");
 const express = require("express");
 const router = express.Router();
 
+const jwtsecret = "secretkeyappearshere";
+
 router.post("/signup", async (req, res) => {
   // First Validate The Request
   //console.log(req.body)
@@ -36,7 +38,7 @@ router.post("/login", async (req, res) => {
       try {
         token = jwt.sign(
           { userId: user.id, email: user.email },
-          "secretkeyappearshere",
+          jwtsecret,
           { expiresIn: "1h" }
         );
         return res.status(200).send({ token: token });
@@ -52,5 +54,26 @@ router.post("/login", async (req, res) => {
     return res.status(400).send({ response: "Account does not exist" });
   }
 });
+
+router.post("/listallusers", async (req, res) => {
+  try {
+    if(jwt.verify(req.body.token,jwtsecret)){
+      /*allusers = UserModel.find({}, 'name email password');
+      console.log(allusers)
+      return res.status(200).send(UserModel.find({}));*/
+      UserModel.find({}, 'name email password')
+      .then(users => {
+          res.status(200).send(users);
+      })
+      .catch(err => {
+          res.status(500).send(err);
+      });
+      }
+    }
+   catch (error) {
+    console.log(error)
+  }
+});
+
 
 module.exports = router;
