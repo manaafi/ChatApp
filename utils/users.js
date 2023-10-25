@@ -1,26 +1,33 @@
-const users = [];
+const { joinedUsersModel } = require("../models/joined-users");
+const { messageModel } = require("../models/messages");
 
-function joinUser(id, name, room){
-    const user = {id, name, room};
-
-    users.push(user);
-
-    return user;
+async function joinUser(id, userName, room) {
+  const model = new joinedUsersModel({
+    room: room,
+    userName: userName,
+    userId: id,
+  });
+  const user = await model.save();
+  return user;
 }
 
-function currentUser(id){
-    return users.find(user => user.id === id);
+async function currentUser(id) {
+  return await joinedUsersModel.findOne({ userId: id });
 }
 
-function userLeft(id){
-    const index = users.findIndex(user => user.id === id);
-    if(index !== 1){
-        return users.splice(index, 1)[0];
-    }
+async function userLeft(id) {
+  const user = await joinedUsersModel.findOne({ userId: id });
+  await joinedUsersModel.deleteOne({ userId: id });
+  return user;
 }
 
-function roomUsers(room){
-    return users.filter(user => user.room === room);
-
+async function joinedUsers(room) {
+  return await joinedUsersModel.find({ room: room });
 }
-module.exports = {joinUser, currentUser, userLeft ,roomUsers};
+
+async function currentUserRooms(userName){
+  console.log("function call currentUserRooms", userName)
+  return await messageModel.distinct("room", { userName: userName });
+}
+module.exports = { joinUser, currentUser, userLeft, joinedUsers, currentUserRooms };
+

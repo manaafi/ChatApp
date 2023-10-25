@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <link
       rel="stylesheet"
@@ -19,9 +20,9 @@
         <h1><i class="fas fa-smile"></i> ChatCord</h1>
       </header>
       <main class="join-main">
-        <h1 style="text-align: center;">Sign Up</h1>
-        <br>
-        <form action="">
+        <h1 style="text-align: center">Sign Up</h1>
+        <br />
+        <!-- <form> -->
           <div class="form-control">
             <label for="name">Name</label>
             <input
@@ -55,8 +56,8 @@
               required
             />
           </div>
-          <button type="submit" class="btn">Sign Up</button>
-        </form>
+          <button type="submit" id="signupbutton" class="btn">Sign Up</button>
+        <!-- </form> -->
       </main>
     </div>
     <script>
@@ -73,6 +74,48 @@
 
       password.onchange = validatePassword;
       confirm_password.onchange = validatePassword;
+      $("#signupbutton").click(function(){
+        var name = document.getElementById("name")
+        var username = document.getElementById("username")
+        var password = document.getElementById("password")
+        var data = {
+          "name": name.value,
+          "email": username.value,
+          "password": password.value
+        }
+        $.ajax({
+        url: "http://localhost:4000/api/signup",
+        method: "POST",
+        data: JSON.stringify(data),
+        contentType: "application/json",
+        success: function (response) {
+          // const parsedData = JSON.parse(response);
+          // console.log("success signup ", response)
+          alert(response.message);
+          window.location.href = "index.html";
+        },
+        error: function (xhr, status, error) {
+          console.log(xhr)
+          if(xhr.hasOwnProperty("responseJSON")){
+            alert(xhr.responseJSON.message);
+          }
+          else{
+            alert(xhr.responseText);
+          }
+        },
+      });
+      })
+      // $.ajax({
+      //   url: "http://localhost:4000/api/listallusers",
+      //   method: "GET",
+      //   success: function (response) {
+      //     // const parsedData = JSON.parse(response);
+      //     console.log("success ajax ", response)
+      //   },
+      //   error: function (xhr, status, error) {
+      //     console.log(error, xhr)
+      //   },
+      // });
     </script>
   </body>
 </html>

@@ -3,40 +3,146 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css"
       integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk="
-      crossorigin="anonymous"
-    />
+      crossorigin="anonymous" />
+
     <link rel="stylesheet" href="css/style.css" />
     <title>ChatCord App</title>
   </head>
+
   <body>
     <div class="chat-container">
+      <!-- <a href="#" id="popover">the popover link</a>
+      <div id="popover-head" class="hide">some title</div>
+      <div id="popover-content" class="hide">
+      </div> -->
       <header class="chat-header">
         <h1><i class="fas fa-smile"></i> ChatCord</h1>
-        <a href="index.html" class="btn">Leave Room</a>
+        <div
+          class="chat-form-container"
+          style="
+            display: inline-grid;
+            grid-auto-flow: column;
+            grid-template-columns: 1fr;
+            grid-auto-columns: 1fr;
+            padding: unset;
+          "
+          id="search-user-container">
+          <div id="userSearch-textBox" style="display: inline-block">
+            <input
+              type="text"
+              id="searchUser"
+              placeholder="Search for a user.."
+              onclick="activateSearch();"
+              oninput="activateSearch(searchUser.value);" />
+          </div>
+          <div id="searchDropdown" class="dropdown-content" style="top: 39%;">
+            <!-- anchor tags to be added using js -->
+            <!-- <a href="#about">About</a>
+          <a href="#base">Base</a>
+          <a href="#blog">Blog</a>
+          <a href="#contact">Contact</a>
+          <a href="#custom">Custom</a>
+          <a href="#support">Support</a>
+          <a href="#tools">Tools</a> -->
+          </div>
+        </div>
+        <a
+          href="index.html"
+          onclick="localStorage.clear();"
+          class="btn"
+          id="signOut"
+          >Leave Room</a
+        >
       </header>
       <main class="chat-main">
         <div class="chat-sidebar">
-          <h3><i class="fas fa-comments"></i> Room Name:</h3>
-          <h2 id="room-name"></h2>
+          <h3>
+            <i class="fas fa-comments"></i> Rooms
+            <button
+              class="btn"
+              id="addRoomBtn"
+              style="
+                padding: 0;
+                margin-left: 100px;
+                background-color: #7386ff;
+                color: #e6e9ff;
+              ">
+              <i class="fas fa-plus-circle"></i>
+            </button>
+            <input
+              type="text"
+              id="addRoomName"
+              placeholder="Enter a room name"
+              style="width: -moz-available; display: none" />
+          </h3>
+          <div id="room-name"></div>
           <h3><i class="fas fa-users"></i>Users</h3>
           <ul id="users"></ul>
         </div>
         <div class="chat-messages"></div>
       </main>
-      <div class="chat-form-container">
+
+      <div
+        class="chat-form-container"
+        style="position: relative"
+        id="gif-form-container">
+        <div id="gif-popup">
+          <div id="gif-results"></div>
+        </div>
+        <form id="gif-form">
+          <input type="text" id="gif-search" placeholder="Search for a GIF" />
+          <!-- <button id="gif-search-btn">Search</button> -->
+          <button id="gif-cancel-btn" class="btn">
+            <i class="fas fa-times-circle"></i>
+          </button>
+        </form>
+      </div>
+
+      <div class="chat-form-container" id="chat-form-container">
         <form id="chat-form">
           <input
             id="msg"
             type="text"
             placeholder="Enter Message"
             required
-            autocomplete="off"
-          />
-          <button class="btn"><i class="fas fa-paper-plane"></i> Send</button>
+            autocomplete="off" />
+          <button class="btn" id="sendMessage" style="margin-right: 4px">
+            <i class="fas fa-paper-plane"></i> Send
+          </button>
+
+          <!-- <label
+            class="btn"
+            style="line-height: 0px; display: none"
+            id="attachmentButton"
+            ><i
+              class="fas fa-paperclip"
+              style="vertical-align: text-bottom; line-height: 27px"></i
+          ></label> -->
+
+          <!-- <label for="attachment"
+            ></label> -->
+
+          <select
+            name="attachment"
+            id="attachment"
+            class="fa"
+            style="width: 41px">
+            <option selected value="dummy">&#xf0c6;</option>
+            <option value="image">&#xf03e;</option>
+            <option value="gif">&#xf87c;</option>
+          </select>
+
+          <input
+            type="file"
+            id="imageFile"
+            accept="image/*"
+            style="display: none"
+            onchange="validateFileType()" />
         </form>
       </div>
     </div>
@@ -44,8 +150,15 @@
       src="https://cdnjs.cloudflare.com/ajax/libs/qs/6.11.1/qs.min.js"
       integrity="sha512-5Zv/hNtOKSkeScnIYOqGjng82gQSHsCoyqq9TgrJLgYa032cUYWH4kF1ayS8Gz1Jfge7e8MaBF6AeEvoQ92v8w=="
       crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    ></script>
+      referrerpolicy="no-referrer">
+
+
+      // $("#signOut").click(function(){
+      //   console.log("working")
+      //   localStorage.clear();
+      //   window.location.href = "index.html"
+      // })
+    </script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="js/main.js"></script>
   </body>

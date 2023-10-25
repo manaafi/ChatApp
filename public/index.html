@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css"
@@ -19,7 +20,7 @@
         <h1><i class="fas fa-smile"></i> ChatCord</h1>
       </header>
       <main class="join-main">
-        <form action="chat.html">
+        <!-- <form> -->
           <div class="form-control">
             <label for="username">Username</label>
             <input
@@ -34,15 +35,15 @@
             <label for="username">Password</label>
             <input
               type="password"
-              name="username"
-              id="username"
+              name="password"
+              id="password"
               placeholder="Enter password..."
               required
             />
           </div>
           <div class="form-control">
             <label for="room">Room</label>
-            <select name="room" id="room">
+            <select name="room" id="room" style="display: block;">
               <option value="JavaScript">JavaScript</option>
               <option value="Python">Python</option>
               <option value="PHP">PHP</option>
@@ -51,12 +52,61 @@
               <option value="Java">Java</option>
             </select>
           </div>
-          <button type="submit" class="btn">Log In</button>
-        </form>
+          <button type="submit" id="signinbutton" class="btn">Log In</button>
+        <!-- </form> -->
         <a href="signup.html">
           <button class="btn">Sign Up</button>
         </a>
       </main>
     </div>
+    <script>
+      let token = {token :localStorage.getItem("token")};
+      if (token){
+        $.ajax({
+        url: "http://localhost:4000/api/tokenCheck",
+        method: "POST",
+        data: JSON.stringify(token),
+        contentType: "application/json",
+        success: function (response) {
+          window.location.href = 'chat.html'
+        },
+        error: function(xhr, status, error){
+          console.log(xhr)
+          alert(xhr.responseJSON.message)
+          localStorage.clear()
+        }})
+      }
+      $("#signinbutton").click(function(){
+        var username = document.getElementById("username")
+        var password = document.getElementById("password")
+        var room = document.getElementById("room")
+        var data = {
+          "email": username.value,
+          "password": password.value,
+          "room": room.value
+        }
+        // console.log(data)
+        $.ajax({
+        url: "http://localhost:4000/api/login",
+        method: "POST",
+        data: JSON.stringify(data),
+        contentType: "application/json",
+        success: function (response) {
+          if(response.hasOwnProperty("token")){
+            localStorage.setItem("room", room.value)
+            localStorage.setItem("username", username.value)
+            localStorage.setItem("token", response.token)
+            alert("Signed in successfully")
+            window.location.href = "chat.html"
+          }
+          
+        },
+        error: function (xhr, status, error) {
+          alert(xhr.responseJSON.message)
+          console.log(xhr)
+        },
+      });
+    })
+    </script>
   </body>
 </html>

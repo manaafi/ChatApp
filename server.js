@@ -1,90 +1,131 @@
 const path = require("path");
-
+const jwt = require("jsonwebtoken");
+const bodyParser = require("body-parser");
 const http = require("http");
 const express = require("express");
 const mongoose = require("mongoose");
 
-const Joi = require('joi');
-Joi.objectId = require('joi-objectid')(Joi);
-const users = require('./routes/users');
+const jwtsecret = "secretkeyappearshere";
+
+const Joi = require("joi");
+Joi.objectId = require("joi-objectid")(Joi);
+const usersRoutes = require("./routes/users");
+const messagesRoutes = require("./routes/messages");
 
 const socketio = require("socket.io");
 const { disconnect } = require("process");
 
 const app = express();
 
-app.use(express.json());
-app.use('/api', users);
+app.use(bodyParser.json());
+
+app.use("/api", usersRoutes, messagesRoutes);
 
 mongoose
   .connect("mongodb://127.0.0.1:27017/chatapp")
   .then(() => console.log("Now connected to MongoDB!"))
   .catch((err) => console.error("Something went wrong", err));
 
-/*const UserSchema = new mongoose.Schema({
-  email: String,
-  name: String,
-  password: String,
-});
-
-const UserModel = mongoose.model("users", UserSchema);
-
-app.get("/users", (req, res) => {
-  UserModel.find({})
-    .then(function (users) {
-      res.json(users);
-    })
-    .catch(function (err) {
-      console.log(err);
-    });
-});*/
-
 const server = http.createServer(app);
 const io = socketio(server);
-const formatMsg = require("./utils/messages");
-const { joinUser, currentUser, userLeft, roomUsers } = require("./utils/users");
+const { processMsg } = require("./utils/messages");
+const {
+  joinUser,
+  currentUser,
+  userLeft,
+  joinedUsers,
+  currentUserRooms,
+} = require("./utils/users");
+const { join } = require("path");
 
 const adminName = "Admin";
-
+app.all("/private/*", function (req, res, next) {
+  // console.log(req.query.token);
+  try {
+    if (jwt.verify(req.query.token, jwtsecret)) {
+      // next();
+    }
+  } catch (error) {
+    console.log("PRIVATE ACCESS ERROR", error);
+    // res.status(401);
+    res.redirect("/index.html");
+  }
+  next();
+});
 app.use(express.static(path.join(__dirname, "public")));
+app.use("/private", express.static(path.join(__dirname, "private")));
 
 io.on("connection", (socket) => {
-  socket.on("joinroom", ({ username, room }) => {
-    const user = joinUser(socket.id, username, room);
+  socket.on("joinroom", async ({ username: userName, room }) => {
+    const user = await joinUser(socket.id, userName, room);
     socket.join(room);
-
-    socket.emit("msg", formatMsg(adminName, "Welcome!"));
+    socket.emit("msg", await processMsg(adminName, "Welcome!", room));
     socket.broadcast
       .to(user.room)
-      .emit("msg", formatMsg(adminName, `${username} has joined the chat!`));
+      .emit(
+        "msg",
+        await processMsg(userName, `${user.userName} has joined the chat!`, room)
+      );
 
-    io.to(user.room).emit("roomUsers", {
-      room: user.room,
-      users: roomUsers(user.room),
+
+    io.to(socket.id).emit("currentRooms", {
+      rooms: await currentUserRooms(userName),
+    });
+
+    io.to(user.room).emit("joinedUsers", {
+      users: await joinedUsers(user.room),
     });
   });
 
-  socket.on("chatmsg", (msg) => {
-    const user = currentUser(socket.id);
-    io.to(user.room).emit("msg", formatMsg(user.name, msg));
+  socket.on("chatmsg", async (msg, room) => {
+    const user = await currentUser(socket.id);
+    io.to(user.room).emit("msg", await processMsg(user.userName, msg, room));
   });
 
-  socket.on("disconnect", () => {
-    const user = userLeft(socket.id);
+  socket.on("imgMessage", async (img, room, message) => {
+    const user = await currentUser(socket.id);
+    io.to(user.room).emit(
+      "msg",
+      await processMsg(user.userName, message, room, img)
+    );
+  });
+
+  socket.onAny((event, ...args) => {
+    console.log(event, args);
+  });
+
+  socket.on("disconnect", async () => {
+    const user = await userLeft(socket.id);
     if (user) {
       io.to(user.room).emit(
         "msg",
-        formatMsg(adminName, `${user.name} has left`)
+        await processMsg(adminName, `${user.userName} has left`, user.room)
       );
 
-      io.to(user.room).emit("roomUsers", {
+      io.to(user.room).emit("joinedUsers", {
         room: user.room,
-        users: roomUsers(user.room),
+        users: await joinedUsers(user.room),
       });
     }
   });
+
+  socket.on('switchRoom', async ({ userName, room }) => {
+    socket.leaveAll()
+    const user = await userLeft(socket.id);
+    console.log(user);
+    // io.to(socket.id).emit("currentRooms", {
+    //   rooms: await currentUserRooms(userName),  
+    // });
+    // if(user){
+    //   io.to(user.room).emit("roomUsers", {
+    //     room: user.room,
+    //     users: joinedUsers(user.room),
+    //   });
+    // }
+    // socket.join(join)
+  });
 });
 
-const port = process.env.port || 3000;
+const port = process.env.port || 4000;
 
-server.listen(port, () => console.log(`server runnin on port ${port}`));
+server.listen(4000, () => console.log(`server runnin on port ${port}`));
