@@ -1,6 +1,8 @@
 .gitignore
 .vscode/easycode.ignore
+node_modules
 private
+
 public/chat copy 2.html
 public/chat copy latest random gif send.html
 js/main copy 2.js

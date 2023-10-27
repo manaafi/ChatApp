@@ -19,7 +19,7 @@ const addRoomName = document.getElementById("addRoomName");
 const searchDropdown = document.getElementById("searchDropdown");
 const searchUser = document.getElementById("searchUser");
 
-
+searchUser.value = ""
 attachmentDropdown.value = "dummy";
 
 addRoomBtn.addEventListener("click", function (e) {
@@ -71,7 +71,12 @@ attachmentDropdown.addEventListener("change", function () {
 let firstJoin = true;
 joinRoom();
 
-
+socket.on("privateRoomID", (room) => {
+  console.log("privateRoomID", room)
+  roomLS = room;
+  localStorage.setItem("room", room)
+  restoreHistory(room)
+});
 
 socket.on("msg", (message) => {
   outputMsg(message);
@@ -120,25 +125,25 @@ function joinRoom(room) {
 
 
 function activateSearch(query) {
-  console.log(query);
+  // console.log(query);
   if (searchUser.value.length < 2) {
     searchDropdown.innerHTML = `<p style="color: black; ">Start typing...</p>`
     searchDropdown.style.display = "block"
   }
   if (query) {
     if (query.length > 2) {
-      // let data = { userName: query, token: tokenLS };
-      // console.log(data)
+      let data = { userName: query, token: tokenLS };
+      //  console.log(data)
       searchDropdown.innerHTML = ""
       $.ajax({
         url: "http://localhost:4000/api/listallusers",
         method: "GET",
-        // data: data,
+        data: data,
         contentType: "application/json",
         success: function (response) {
-          console.log("response ajax",response)
+          // console.log("response ajax",response)
           for (i of response) {
-            searchDropdown.innerHTML += `<a href="#">${i.email}</a>`
+            searchDropdown.innerHTML += `<a href='javascript:chatdiv.textContent="";joinDM("${i.email}");'>${i.email}</a><br>`
           }
         },
         error: function (xhr, status, error) {
@@ -152,6 +157,10 @@ function activateSearch(query) {
       });
     }
   }
+}
+
+function joinDM(user){
+  socket.emit('joinPrivateRoom', { user1: userNameLS, user2: user});
 }
 
 function restoreHistory(room) {

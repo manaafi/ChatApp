@@ -86,9 +86,8 @@ router.post("/tokenCheck", async (req, res) => {
 
 router.get("/listallusers", async (req, res) => {
   try {
-    if (jwt.verify(req.body.token, jwtsecret)) {
-      console.log("listallusers")
-      UserModel.find({ email: {$regex : "^" + req.body.userName}}, "email")
+    if (jwt.verify(req.query.token, jwtsecret)) {
+      UserModel.find({ email: {$regex : "^" + req.query.userName}}, "email")
         .then((users) => {
           res.status(200).send(users);
         })

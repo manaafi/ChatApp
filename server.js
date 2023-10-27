@@ -4,7 +4,7 @@ const bodyParser = require("body-parser");
 const http = require("http");
 const express = require("express");
 const mongoose = require("mongoose");
-
+// const cors = require("cors"); 
 const jwtsecret = "secretkeyappearshere";
 
 const Joi = require("joi");
@@ -18,7 +18,7 @@ const { disconnect } = require("process");
 const app = express();
 
 app.use(bodyParser.json());
-
+// app.use(cors);
 app.use("/api", usersRoutes, messagesRoutes);
 
 mongoose
@@ -67,7 +67,6 @@ io.on("connection", (socket) => {
         await processMsg(userName, `${user.userName} has joined the chat!`, room)
       );
 
-
     io.to(socket.id).emit("currentRooms", {
       rooms: await currentUserRooms(userName),
     });
@@ -75,6 +74,21 @@ io.on("connection", (socket) => {
     io.to(user.room).emit("joinedUsers", {
       users: await joinedUsers(user.room),
     });
+  });
+
+
+  socket.on('joinPrivateRoom', async ({ user1, user2 }) => {
+    try {
+      socket.leaveAll();
+      const room = [user1, user2].sort().join('-');
+      socket.join(room);
+      io.to(socket.id).emit("privateRoomID", { room: room });
+      io.to(socket.id).emit("currentRooms", {
+        rooms: await currentUserRooms(user1),
+      });
+    } catch (error) {
+      console.error('error joining dm', error);
+    }
   });
 
   socket.on("chatmsg", async (msg, room) => {
