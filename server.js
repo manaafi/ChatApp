@@ -6,12 +6,13 @@ const express = require("express");
 const mongoose = require("mongoose");
 // const cors = require("cors"); 
 const jwtsecret = "secretkeyappearshere";
-
+const { privateRoomModel } = require("./models/rooms");
+const uuid = require("uuid");
 const Joi = require("joi");
 Joi.objectId = require("joi-objectid")(Joi);
 const usersRoutes = require("./routes/users");
 const messagesRoutes = require("./routes/messages");
-
+const { messageModel } = require("./models/messages");
 const socketio = require("socket.io");
 const { disconnect } = require("process");
 
@@ -60,12 +61,15 @@ io.on("connection", (socket) => {
     const user = await joinUser(socket.id, userName, room);
     socket.join(room);
     socket.emit("msg", await processMsg(adminName, "Welcome!", room));
-    socket.broadcast
+
+    if (await messageModel.findOne({ message: user.userName + " has joined the chat!" }) == null) {
+      socket.broadcast
       .to(user.room)
       .emit(
         "msg",
         await processMsg(userName, `${user.userName} has joined the chat!`, room)
       );
+    }
 
     io.to(socket.id).emit("currentRooms", {
       rooms: await currentUserRooms(userName),
@@ -77,12 +81,38 @@ io.on("connection", (socket) => {
   });
 
 
+  socket.on("roomIDcheck", async (room, callback) => {
+    let roomID = await privateRoomModel.findOne({ roomID: room });
+    // console.log("roomIDcheck", roomID)
+    let ret = false
+    if (roomID != null) {
+      ret = true
+    }
+    // console.log("roomIDcheck ret", ret)
+    callback({
+      status: ret
+    });
+  });
+
   socket.on('joinPrivateRoom', async ({ user1, user2 }) => {
     try {
       socket.leaveAll();
-      const room = [user1, user2].sort().join('-');
-      socket.join(room);
-      io.to(socket.id).emit("privateRoomID", { room: room });
+      const users = [user1, user2].sort().join('-');
+      let roomID = await privateRoomModel.findOne({ users: users });
+      if (roomID == null) {
+        roomID = uuid.v4();
+        let privateRoom = new privateRoomModel({
+          roomID: roomID,
+          users: users
+        });
+        await privateRoom.save();
+        socket.join(roomID);
+        socket.emit("privateRoomID", roomID);
+      }
+      else {
+        socket.join(roomID.roomID);
+        socket.emit("privateRoomID", roomID.roomID);
+      }
       io.to(socket.id).emit("currentRooms", {
         rooms: await currentUserRooms(user1),
       });
@@ -93,7 +123,7 @@ io.on("connection", (socket) => {
 
   socket.on("chatmsg", async (msg, room) => {
     const user = await currentUser(socket.id);
-    io.to(user.room).emit("msg", await processMsg(user.userName, msg, room));
+    io.to(room).emit("msg", await processMsg(user.userName, msg, room));
   });
 
   socket.on("imgMessage", async (img, room, message) => {
@@ -104,17 +134,17 @@ io.on("connection", (socket) => {
     );
   });
 
-  socket.onAny((event, ...args) => {
-    console.log(event, args);
-  });
+  // socket.onAny((event, ...args) => {
+  //   console.log(event, args);
+  // });
 
   socket.on("disconnect", async () => {
     const user = await userLeft(socket.id);
     if (user) {
-      io.to(user.room).emit(
-        "msg",
-        await processMsg(adminName, `${user.userName} has left`, user.room)
-      );
+      // io.to(user.room).emit(
+      //   "msg",
+      //   await processMsg(adminName, `${user.userName} has left`, user.room)
+      // );
 
       io.to(user.room).emit("joinedUsers", {
         room: user.room,
@@ -123,10 +153,10 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on('switchRoom', async ({ userName, room }) => {
+  socket.on('switchRoom', async ( userName, room, callback) => {
     socket.leaveAll()
     const user = await userLeft(socket.id);
-    console.log(user);
+    // console.log(user);
     // io.to(socket.id).emit("currentRooms", {
     //   rooms: await currentUserRooms(userName),  
     // });
@@ -137,6 +167,8 @@ io.on("connection", (socket) => {
     //   });
     // }
     // socket.join(join)
+    await currentUserRooms(userName).then((room) => {callback(room)})
+    // callback(await currentUserRooms(userName))
   });
 });
 

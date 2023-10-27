@@ -72,9 +72,8 @@ let firstJoin = true;
 joinRoom();
 
 socket.on("privateRoomID", (room) => {
-  console.log("privateRoomID", room)
   roomLS = room;
-  localStorage.setItem("room", room)
+  localStorage.setItem("room", room);
   restoreHistory(room)
 });
 
@@ -106,7 +105,9 @@ function joinRoom(room) {
   if (room) {
     roomLS = room;
     localStorage.setItem("room", room)
-    socket.emit("switchRoom", { username: userNameLS, room: roomLS });
+    socket.emit("switchRoom", { username: userNameLS, room: roomLS }, (response) =>{
+      outputRooms(response);
+    });
 
   }
   if (firstJoin == false) {
@@ -117,9 +118,10 @@ function joinRoom(room) {
   socket.on("joinedUsers", ({ users }) => {
     outputUsers(users);
   });
-  socket.on("currentRooms", ({ rooms }) => {
-    outputRooms(rooms);
-  });
+  // socket.on("currentRooms", ({ rooms }) => {
+  //   console.log("outputRooms", rooms)
+  //   outputRooms(rooms);
+  // });
   firstJoin = false;
 }
 
@@ -143,7 +145,12 @@ function activateSearch(query) {
         success: function (response) {
           // console.log("response ajax",response)
           for (i of response) {
-            searchDropdown.innerHTML += `<a href='javascript:chatdiv.textContent="";joinDM("${i.email}");'>${i.email}</a><br>`
+            if (i.email == userNameLS) {
+              searchDropdown.innerHTML += `<a href='javascript:chatdiv.textContent="";joinDM("${i.email}");'>${i.email} (You)</a><br>`
+            }
+            else {
+              searchDropdown.innerHTML += `<a href='javascript:chatdiv.textContent="";joinDM("${i.email}");'>${i.email}</a><br>`
+            }
           }
         },
         error: function (xhr, status, error) {
@@ -159,11 +166,13 @@ function activateSearch(query) {
   }
 }
 
-function joinDM(user){
-  socket.emit('joinPrivateRoom', { user1: userNameLS, user2: user});
+function joinDM(user) {
+  socket.emit('joinPrivateRoom', { user1: userNameLS, user2: user });
+
 }
 
 function restoreHistory(room) {
+  console.log("restoreHistory", room)
   let data = { room: room, token: tokenLS };
   $.ajax({
     url: "http://localhost:4000/api/retrieveHistory",
@@ -241,9 +250,26 @@ function outputMsg(message) {
   chatdiv.appendChild(div);
 }
 
-function outputRooms(rooms) {
+async function isPrivateChat(room) {
+  let ret = false;
+  return await new Promise(function (myResolve, myReject) {
+    socket.emit("roomIDcheck", room, (response) => {
+      // console.log("callback", response)
+      ret = response.status
+      // console.log("isPrivateChat", ret)
+      myResolve(ret);
+    });
+  });
+}
+
+async function outputRooms(rooms) {
   roomNames.textContent = ""
   for (i of rooms) {
+    if (await isPrivateChat(i)) {
+      // console.log("continued", i)
+      continue;
+    }
+    // console.log("not continued", i)
     let roomTag = document.createElement("a");
     roomTag.style.color = "white";
     if (i == roomLS) {
@@ -251,7 +277,6 @@ function outputRooms(rooms) {
       roomTag.innerHTML = `<h2 style="margin-bottom: 0px;color: khaki;">${i}</h2><hr style=" visibility:hidden;">`;
       // roomNames.insertBefore(roomTag, eElement.firstChild);
       roomNames.appendChild(roomTag);
-
     }
     else {
       roomTag.href = `javascript:chatdiv.textContent=""; joinRoom("${i}");`

@@ -26,7 +26,7 @@ async function joinedUsers(room) {
 }
 
 async function currentUserRooms(userName){
-  console.log("function call currentUserRooms", userName)
+  // console.log("function call currentUserRooms", userName)
   return await messageModel.distinct("room", { userName: userName });
 }
 module.exports = { joinUser, currentUser, userLeft, joinedUsers, currentUserRooms };
