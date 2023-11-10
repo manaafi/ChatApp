@@ -21,7 +21,7 @@ const privateRoomSchema = new mongoose.Schema({
         required: true,
     },
     users: {
-        type: String,
+        type: [],
         required: true,
     }
 })

@@ -36,8 +36,26 @@ addRoomBtn.addEventListener("click", function (e) {
 });
 
 $("#addRoomName").keyup(function (event) {
-  if (event.keyCode === 13) {
-    //add room route
+  if (event.key === "Enter") {
+    if (addRoomName.value) {
+      const data = { userName: userNameLS, room: addRoomName.value, token: tokenLS }
+      $.ajax({
+        url: "http://localhost:4000/api/addRoom",
+        method: "POST",
+        data: JSON.stringify(data),
+        contentType: "application/json",
+        success: function (response) {
+          alert(response.message)
+          joinRoom(data.room);
+
+        },
+        error: function (xhr, status, error) {
+          alert(xhr.responseJSON.message)
+        }
+      })
+      addRoomBtn.click()
+    }
+
   }
 });
 
@@ -68,7 +86,7 @@ attachmentDropdown.addEventListener("change", function () {
   }
 });
 
-let firstJoin = true;
+// let firstJoin = true;
 joinRoom();
 
 socket.on("privateRoomID", (room) => {
@@ -101,28 +119,36 @@ chatboxdom.addEventListener("submit", (e) => {
   e.target.elements.msg.focus();
 });
 
+socket.on("currentRooms", ({ rooms }) => {
+  outputRooms(rooms);
+});
+socket.on("joinedUsers", ({ users }) => {
+  outputUsers(users);
+});
+
 function joinRoom(room) {
   if (room) {
     roomLS = room;
     localStorage.setItem("room", room)
-    socket.emit("switchRoom", { username: userNameLS, room: roomLS }, (response) =>{
+    socket.emit("switchRoom", userNameLS, roomLS, (response) => {
+      console.log("response", response);
       outputRooms(response);
     });
-
   }
-  if (firstJoin == false) {
-    // socket.emit("switchRoom", { username: userNameLS, room: roomLS });
+  // if (firstJoin == false) {
+  //   // socket.emit("switchRoom", { username: userNameLS, room: roomLS });
+  // }
+  else if(!roomLS || roomLS == "018b954f-fd29-726a-9a5e-f7586c0e47a3"){
+    outputMsg({userName: "Admin", message: "Welcome! Start chatting by joining/creating a room, or by finding a friend using the search bar above.", time: Date.now()})
+    outputRooms(["Join or create a room using the add button above"], true)
+    socket.emit("joinroom", {userName: userNameLS, room: "018b954f-fd29-726a-9a5e-f7586c0e47a3"})
   }
-  socket.emit("joinroom", { username: userNameLS, room: roomLS });
-  restoreHistory(roomLS);
-  socket.on("joinedUsers", ({ users }) => {
-    outputUsers(users);
-  });
-  // socket.on("currentRooms", ({ rooms }) => {
-  //   console.log("outputRooms", rooms)
-  //   outputRooms(rooms);
-  // });
-  firstJoin = false;
+  else {
+    socket.emit("joinroom", { userName: userNameLS, room: roomLS });
+    restoreHistory(roomLS);
+  }
+  
+  // firstJoin = false;
 }
 
 
@@ -146,10 +172,10 @@ function activateSearch(query) {
           // console.log("response ajax",response)
           for (i of response) {
             if (i.email == userNameLS) {
-              searchDropdown.innerHTML += `<a href='javascript:chatdiv.textContent="";joinDM("${i.email}");'>${i.email} (You)</a><br>`
+              searchDropdown.innerHTML += `<a href='javascript:joinDM("${i.email}");'>${i.email} (You)</a><br>`
             }
             else {
-              searchDropdown.innerHTML += `<a href='javascript:chatdiv.textContent="";joinDM("${i.email}");'>${i.email}</a><br>`
+              searchDropdown.innerHTML += `<a href='javascript:joinDM("${i.email}");'>${i.email}</a><br>`
             }
           }
         },
@@ -167,11 +193,12 @@ function activateSearch(query) {
 }
 
 function joinDM(user) {
+  searchDropdown.style.display = "none";
   socket.emit('joinPrivateRoom', { user1: userNameLS, user2: user });
-
 }
 
 function restoreHistory(room) {
+  chatdiv.innerHTML = ""
   console.log("restoreHistory", room)
   let data = { room: room, token: tokenLS };
   $.ajax({
@@ -262,32 +289,43 @@ async function isPrivateChat(room) {
   });
 }
 
-async function outputRooms(rooms) {
+async function outputRooms(rooms, firstLogin) {
   roomNames.textContent = ""
-  for (i of rooms) {
-    if (await isPrivateChat(i)) {
+  // console.log("outputRooms", rooms)
+  for (let i of rooms) {
+    let roomTag = document.createElement("a");
+    roomTag.style.color = "white";
+    // console.log("outputRooms i", i)
+    if(firstLogin || !rooms){
+      roomTag.href = `javascript:void(0);`
+      roomTag.innerHTML = `<h2 style="margin-bottom: 0px;">${i}</h2><hr style=" visibility:hidden;">`;
+    }
+    else if (await isPrivateChat(i)) {
       // console.log("continued", i)
       continue;
     }
     // console.log("not continued", i)
-    let roomTag = document.createElement("a");
-    roomTag.style.color = "white";
-    if (i == roomLS) {
+    
+    else if (i == roomLS) {
       roomTag.href = `javascript:void(0);`
       roomTag.innerHTML = `<h2 style="margin-bottom: 0px;color: khaki;">${i}</h2><hr style=" visibility:hidden;">`;
       // roomNames.insertBefore(roomTag, eElement.firstChild);
-      roomNames.appendChild(roomTag);
+      // roomNames.appendChild(roomTag);
     }
+    // else if(i == "018b954f-fd29-726a-9a5e-f7586c0e47a3"){
+    //   roomTag.innerHTML = `<h2 style="margin-bottom: 0px;color: khaki;">Welcome!</h2><hr style=" visibility:hidden;">`;
+    // }
     else {
       roomTag.href = `javascript:chatdiv.textContent=""; joinRoom("${i}");`
       roomTag.innerHTML = `<h2 style="margin-bottom: 0px;">${i}</h2><hr style=" visibility:hidden;">`;
-      roomNames.appendChild(roomTag);
     }
+    roomNames.appendChild(roomTag);
   }
-  roomNames.lastChild.firstChild.style.marginBottom = "10px";
+  roomNames.lastChild? roomNames.lastChild.firstChild.style.marginBottom = "10px": null
 }
 
 function outputUsers(users) {
+  console.log(users)
   userList.innerHTML = "";
   userList.innerHTML = `${users
     .map((user) => `<li>${user.userName}</li>`)

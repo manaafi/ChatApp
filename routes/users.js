@@ -38,6 +38,8 @@ router.post("/signup", async (req, res) => {
 router.post("/login", async (req, res) => {
   // console.log(req.body)
   let user = await UserModel.findOne({ email: req.body.email });
+  let room = await messageModel.findOne({ userName: req.body.email });
+  // if(room)console.log(room.room, typeof room.room);
   if (user) {
     if (req.body.password == user.password) {
       let token;
@@ -45,7 +47,7 @@ router.post("/login", async (req, res) => {
         token = jwt.sign({ userId: user.id, email: user.email }, jwtsecret, {
           expiresIn: "24h",
         });
-        return res.status(200).send({ token: token });
+         res.status(200).send({ token: token, room: room });
       } catch (err) {
         console.log(err);
         return { message: "Error! Something went wrong." };
@@ -64,7 +66,7 @@ router.post("/tokenCheck", async (req, res) => {
   try {
     let payload = jwt.verify(req.body.token, jwtsecret);
     if (payload) {
-      console.log(payload);
+      // console.log(payload);
       res.send({ message: "Token Valid" });
     }
   } catch (error) {
@@ -121,8 +123,8 @@ router.get("/listallusers", async (req, res) => {
 router.post("/addRoom", async (req, res) => {
   try {
     if (jwt.verify(req.body.token, jwtsecret)) {
-      if (await messageModel.findOne({ room: req.body.room })) {
-        res.status(400).send({ message: "Room already exists!" });
+      if (await messageModel.findOne({ room: { $regex: new RegExp('^' + req.body.room.trim() + '$', 'i') } })) {
+        res.status(200).send({ message: "Room already exists!" });
       } else {
         const message = await processMsg(
           req.body.userName,
@@ -140,7 +142,7 @@ router.post("/addRoom", async (req, res) => {
     } else if (error.message == "jwt expired") {
       res.status(400).send({ message: "Session Expired" });
     } else {
-      console.log("AAA", error.message);
+      console.log(error.message);
       res.status(400).send({ message: "An error occured, please try again." });
     }
   }
