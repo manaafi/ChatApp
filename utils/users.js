@@ -36,7 +36,7 @@ async function onlineTextedUsers(user, globalOnlineUsers) {
   let users = await textedUsers(user);
   let onlineUsers = [];
   for (let i of users){
-    if(globalOnlineUsers.includes(i)){
+    if(globalOnlineUsers.find(u => u.userName === i)){
       onlineUsers.push(i);
     }
   }

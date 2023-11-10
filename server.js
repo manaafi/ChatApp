@@ -106,7 +106,7 @@ try {
         rooms: await currentUserRooms(userName),
       });
       
-      let onlineSockets = onlineUsers[0].length ? onlineUsers[0].map(user => user.userId) : null
+      let onlineSockets = onlineUsers[0].length ? onlineUsers[0].map(user => user) : null
       console.log("online sockets", onlineSockets)
       if (onlineSockets) {
         io.to(onlineSockets).emit("joinedUsers", {
@@ -148,14 +148,14 @@ try {
           socket.emit("privateRoomID", roomID);
           // const user = await joinUser(socket.id, user1, roomID);
           globalOnlineUsers.push({ userName: user1, room: roomID, userId: socket.id })
-          console.log("Connected: ", { userName: userName, room: roomID, userId: socket.id })
+          console.log("Connected: ", { userName: user1, room: roomID, userId: socket.id })
         }
         else {
           socket.join(roomID.roomID);
           socket.emit("privateRoomID", roomID.roomID);
           // const user = await joinUser(socket.id, user1, roomID.roomID);
-          globalOnlineUsers.push({ userName: userName, room: roomID.roomID, userId: socket.id })
-          console.log("Connected: ", { userName: userName, room: roomID.roomID, userId: socket.id })
+          globalOnlineUsers.push({ userName: user1, room: roomID.roomID, userId: socket.id })
+          console.log("Connected: ", { userName: user1, room: roomID.roomID, userId: socket.id })
         }
         console.log("All online users ", globalOnlineUsers)
         socket.emit("currentRooms", {
