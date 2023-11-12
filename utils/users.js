@@ -18,47 +18,39 @@ async function joinUser(id, userName, room) {
 }
 
 async function onlineTextedUsers(user, globalOnlineUsers) {
-  // let textedUsers = await privateRoomModel.find({ users: user }, "users")
-  // for (let i of textedUsers) {
-  //   console.log(i.users);
-  // }
-  // if (!textedUsers) {
-  //   return null;
-  // }
-  // let filteredTextedUsers = []
-  // for (let i of textedUsers) {
-  //   filteredUser = globalOnlineUsers.includes(i.users[i.users.indexOf(user) + 1] || globalOnlineUsers.includes(i.users[i.users.indexOf(user) - 1]))
-  //   if (filteredUser){
-  //     filteredTextedUsers.push(i.users.indexOf(user));
-  //   }
-  // }
-  // console.log(filteredTextedUsers);
   let users = await textedUsers(user);
   let onlineUsers = [];
-  for (let i of users){
-    if(globalOnlineUsers.find(u => u.userName === i)){
+  for (let i of users) {
+    if (globalOnlineUsers.find(u => u.userName === i)) {
       onlineUsers.push(i);
     }
   }
-  console.log("onlineTextedUsers: ",onlineUsers)
+  // console.log("onlineTextedUsers: ",onlineUsers, "textedUsers: ", users)
   return [onlineUsers, users];
 }
 
 async function textedUsers(user) {
+  let tempX = []
   let textedUsers = await privateRoomModel.find({ users: user }, "users")
   if (!textedUsers) {
     return null;
   }
   let ret = [];
   for (let i of textedUsers) {
-    for(let x of i.users){
-      if(x != user){
+    for (let x of i.users) {
+      if (x != user) {
         ret.push(x);
       }
     }
   }
-  console.log("textedUsers: ", ret)
+  // console.log("textedUsers: ", ret)
   return ret;
+}
+
+async function lastTexted(userName) {
+  messageModel.findOne({ userName: userName }).sort('-time').then(function (lastTextedUser) {
+    console.log(userName, " has last texted", lastTextedUser)
+  }).catch(function (err) { console.log(err) })
 }
 
 async function currentUser(id) {
@@ -79,5 +71,5 @@ async function currentUserRooms(userName) {
   // console.log("function call currentUserRooms", userName)
   return await messageModel.distinct("room", { userName: userName });
 }
-module.exports = { joinUser, currentUser, userLeft, joinedUsers, currentUserRooms, onlineTextedUsers, textedUsers };
+module.exports = { joinUser, currentUser, userLeft, joinedUsers, currentUserRooms, onlineTextedUsers, textedUsers, lastTexted };
 

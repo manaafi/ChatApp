@@ -9,6 +9,9 @@
 	z-index: 1;
   }
 
+  .online {
+	color: lightgreen;
+  }
 
 #gif-popup {
 	position: absolute;
