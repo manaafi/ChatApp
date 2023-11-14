@@ -13,7 +13,9 @@
             "restart": true,
             "runtimeExecutable": "nodemon",
             "skipFiles": [
-                "<node_internals>/**"
+                "<node_internals>/**",
+                "**/js/**",
+                "main.js"
             ],
             "type": "node"
         },

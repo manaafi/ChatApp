@@ -122,17 +122,21 @@ chatboxdom.addEventListener("submit", (e) => {
 socket.on("currentRooms", ({ rooms }) => {
   outputRooms(rooms);
 });
-socket.on("joinedUsers", ({ users }) => {
-  outputUsers(users);
+socket.on("joinedUsers", async ({ users }) => {
+  await outputUsers(users);
 });
-socket.on("onlinePing", ({ user }) => {
-  outputUsers(user, true);
+socket.on("onlinePing", async ({ user }) => {
+  await outputUsers(user, true);
 });
-socket.on("offlinePing", ({ user }) => {
-  outputUsers(user, false);
+socket.on("offlinePing", async ({ user }) => {
+  await outputUsers(user, false);
 });
 
 function joinRoom(room) {
+  let currentOpenUser = userList.querySelector('li[style="font-weight: bold;"]');
+  if(currentOpenUser){
+    currentOpenUser.removeAttribute('style');
+  } 
   if (room) {
     roomLS = room;
     localStorage.setItem("room", room)
@@ -332,7 +336,7 @@ async function outputRooms(rooms, firstLogin) {
   roomNames.lastChild ? roomNames.lastChild.firstChild.style.marginBottom = "10px" : null
 }
 
-function outputUsers(users, onlineFlag) {
+async function outputUsers(users, onlineFlag) {
   console.log("Users", users)
   // userList.innerHTML = "";
   listItems = userList.getElementsByTagName("li");
@@ -344,13 +348,35 @@ function outputUsers(users, onlineFlag) {
       }
     }
     // }
-    return
+    return  
   }
-  userList.innerHTML = `${users[1].map((user) => {
-    if (users[0].includes(user)) { return `<li>${user}<span class = "online"> ●</span></li>` }
-    else { return `<li>${user}</li>` }
-  })
-    .join("")}`;
+  let isLastChatPrivate = await isPrivateChat(roomLS)
+  if (isLastChatPrivate) {
+    const lastTextedUser = isLastChatPrivate.users.filter(user => user != userNameLS);
+    console.log("lastTextedUser",lastTextedUser[0])
+    userList.innerHTML = `${users[1].map((user) => {
+      if (users[0].includes(user)) { 
+        if(user == lastTextedUser[0]){
+          return `<li style='font-weight: bold;'>${user}<span class = 'online'> ●</span></li>`
+        }
+        return `<li>${user}<span class = "online"> ●</span></li>` 
+      }
+      else {
+        if(user == lastTextedUser[0]){
+          return `<li style='font-weight: bold;'>${user}</li>`
+        }
+        return `<li>${user}</li>` 
+      }
+    }).join("")}`;
+  }
+  else{
+    userList.innerHTML = `${users[1].map((user) => {
+      if (users[0].includes(user)) { 
+        return `<li>${user}<span class = "online"> ●</span></li>` 
+      }
+      else { return `<li>${user}</li>` }
+    }).join("")}`;
+  }
 }
 
 function validateFileType() {

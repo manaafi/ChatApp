@@ -30,19 +30,59 @@ async function onlineTextedUsers(user, globalOnlineUsers) {
 }
 
 async function textedUsers(user) {
-  let tempX = []
-  let textedUsers = await privateRoomModel.find({ users: user }, "users")
-  if (!textedUsers) {
-    return null;
-  }
-  let ret = [];
-  for (let i of textedUsers) {
-    for (let x of i.users) {
-      if (x != user) {
-        ret.push(x);
+  let ret = []
+   await privateRoomModel.aggregate(
+    [
+      {
+        '$match': {
+          'users': user
+        }
+      }, {
+        '$lookup': {
+          'as': 'messages', 
+          'from': 'messages', 
+          'foreignField': 'room', 
+          'localField': 'roomID'
+        }
+      }, {
+        '$sort': {
+          'messages.time': -1
+        }
+      }, {
+        '$project': {
+          'roomID': '$roomID', 
+          'users': {
+            '$filter': {
+              'input': '$users', 
+              'as': 'user', 
+              'cond': {
+                '$ne': [
+                  '$$user', user
+                ]
+              }
+            }
+          }
+        }
       }
-    }
-  }
+    ])
+    .then((users) => {
+      for (let i of users){
+        ret.push(i.users[0]);
+      }
+    })
+  console.log("textedUsers: ", ret)
+  // let textedUsers = await privateRoomModel.find({ users: user }, "users")
+  // if (!textedUsers) {
+  //   return null;
+  // }
+  // let ret = [];
+  // for (let i of textedUsers) {
+  //   for (let x of i.users) {
+  //     if (x != user) {
+  //       ret.push(x);
+  //     }
+  //   }
+  // }
   // console.log("textedUsers: ", ret)
   return ret;
 }
@@ -51,6 +91,7 @@ async function lastTexted(userName) {
   messageModel.findOne({ userName: userName }).sort('-time').then(function (lastTextedUser) {
     console.log(userName, " has last texted", lastTextedUser)
   }).catch(function (err) { console.log(err) })
+
 }
 
 async function currentUser(id) {

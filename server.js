@@ -28,6 +28,7 @@ try {
     .then(() => console.log("Now connected to MongoDB!"))
     .catch((err) => console.error("Something went wrong", JSON.stringify(err)));
 
+  // mongoose.set('debug', { shell: true });
   const server = http.createServer(app);
   const io = socketio(server);
   const { processMsg } = require("./utils/messages");
@@ -165,8 +166,8 @@ try {
 
     async function privateRoomIdCheck(room) {
       let roomID = await privateRoomModel.findOne({ roomID: room });
-      // console.log("roomIDcheck", roomID)
-      let ret = roomID ? true : false;
+      console.log("roomIDcheck", roomID)
+      let ret = roomID ? roomID : false;
       return ret;
     }
 
@@ -260,7 +261,7 @@ try {
       // );
 
       let disconnectedUser = getOnlineUser(socket.id);
-      
+
 
       if (disconnectedUser) {
         let onlineUsers = await onlineTextedUsers(disconnectedUser.userName, globalOnlineUsers);
@@ -284,8 +285,8 @@ try {
       //   globalOnlineUsers = globalOnlineUsers.filter(
       //     (user) => user.userId != user.userId
       //   );
-        // console.log("Disconnected: ", user);
-        // console.log("All online users: ", globalOnlineUsers);
+      // console.log("Disconnected: ", user);
+      // console.log("All online users: ", globalOnlineUsers);
       // }
 
       globalOnlineUsers.forEach(user => {

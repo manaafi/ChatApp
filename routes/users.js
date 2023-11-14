@@ -38,7 +38,7 @@ router.post("/signup", async (req, res) => {
 router.post("/login", async (req, res) => {
   // console.log(req.body)
   let user = await UserModel.findOne({ email: req.body.email });
-  let room = await messageModel.findOne({ userName: req.body.email });
+  let room = await messageModel.findOne({ userName: req.body.email }, 'room').sort('-time');
   // if(room)console.log(room.room, typeof room.room);
   if (user) {
     if (req.body.password == user.password) {
@@ -47,7 +47,7 @@ router.post("/login", async (req, res) => {
         token = jwt.sign({ userId: user.id, email: user.email }, jwtsecret, {
           expiresIn: "24h",
         });
-         res.status(200).send({ token: token, room: room });
+         res.status(200).send({ token: token, room: room.room });
       } catch (err) {
         console.log(err);
         return { message: "Error! Something went wrong." };
