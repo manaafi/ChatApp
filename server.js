@@ -224,6 +224,9 @@ try {
         socket.emit("currentRooms", {
           rooms: await currentUserRooms(user1),
         });
+        socket.emit("joinedUsers", {
+          users: await onlineTextedUsers(user1, globalOnlineUsers)
+        })
       } catch (error) {
         console.error("error joining dm", error);
       }

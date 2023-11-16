@@ -142,6 +142,7 @@ function joinRoom(room) {
     localStorage.setItem("room", room)
     socket.emit("switchRoom", userNameLS, roomLS, (response) => {
       console.log("response", response);
+      restoreHistory(roomLS);
       outputRooms(response);
     });
   }
@@ -205,6 +206,18 @@ function activateSearch(query) {
 }
 
 function joinDM(user) {
+  // let currentOpenUser = userList.querySelector('li[style="font-weight: bold;"]');
+  // if(currentOpenUser){
+  //   currentOpenUser.removeAttribute('style');
+  // } 
+  // listItems = userList.getElementsByTagName("li");
+  // for (let i = 0 ; i <= listItems.length; i++) {
+  //   const listElement = listItems[i]
+  //   if(listElement.innerText == user || listElement.innerText == user + " ●"){
+  //     listElement.setAttribute("style", "font-weight: bold;")
+  //   }
+  // };
+  // console.log(listItems);
   searchDropdown.style.display = "none";
   socket.emit('joinPrivateRoom', { user1: userNameLS, user2: user });
 }
@@ -359,22 +372,22 @@ async function outputUsers(users, onlineFlag) {
         if(user == lastTextedUser[0]){
           return `<li style='font-weight: bold;'>${user}<span class = 'online'> ●</span></li>`
         }
-        return `<li>${user}<span class = "online"> ●</span></li>` 
+        return `<a style="color: white;" href="javascript:joinDM('${user}');"><li>${user}<span class = "online"> ●</span></li></a>` 
       }
       else {
         if(user == lastTextedUser[0]){
           return `<li style='font-weight: bold;'>${user}</li>`
         }
-        return `<li>${user}</li>` 
+        return `<a style="color: white;" href="javascript:joinDM('${user}');"><li>${user}</li></a>` 
       }
     }).join("")}`;
   }
   else{
     userList.innerHTML = `${users[1].map((user) => {
       if (users[0].includes(user)) { 
-        return `<li>${user}<span class = "online"> ●</span></li>` 
+        return `<a style="color: white;" href="javascript:joinDM('${user}');"><li>${user}<span class = "online"> ●</span></li></a>` 
       }
-      else { return `<li>${user}</li>` }
+      else { return `<a style="color: white;" href="javascript:joinDM('${user}');"><li>${user}</li></a>` }
     }).join("")}`;
   }
 }
