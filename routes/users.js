@@ -1,10 +1,26 @@
 const jwt = require("jsonwebtoken");
-const { UserModel, validate } = require("../models/user");
+const { UserModel, validate, UserVerifyModel } = require("../models/user");
 const { messageModel } = require("../models/messages");
 const express = require("express");
 const router = express.Router();
 const jwtsecret = "secretkeyappearshere";
 const { processMsg } = require("../utils/messages");
+
+
+async function otpGenerator(email){
+  let user = await UserVerifyModel.findOne({ email: email });
+  if(user){
+    user.otp = Math.floor(100000 + Math.random() * 900000).toString()
+    await user.save();
+  }
+  else{
+    user = new UserVerifyModel({
+      email: req.body.email,
+      otp: Math.floor(100000 + Math.random() * 900000).toString(),
+    })
+    await user.save();
+  }
+}
 
 router.post("/signup", async (req, res) => {
   // First Validate The Request
@@ -20,27 +36,23 @@ router.post("/signup", async (req, res) => {
   }
   // Check if this user already exisits
   let user = await UserModel.findOne({ email: req.body.email });
+  let otp = await UserVerifyModel.findOne({ email: req.body.email });
   if (user) {
     //console.log(user.password);
     return res.status(400).send({ message: "That user already exisits!" });
-  } else {
-    // Insert the new user if they do not exist yet
-    user = new UserModel({
-      name: req.body.name,
-      email: req.body.email,
-      password: req.body.password,
-    });
-    await user.save();
-    res.status(200).send({ message: "Successfully registered." });
+  } 
+  else if(otp){
+    return res.status(200).send({message: "An account with the email already exists, though it has not been verified. Please enter the OTP you have recieved in your mail in the next page.", otpRedirect: true});
+  }else {
+    await otpGenerator(req.body.email)
+    res.status(200).send({ message: "Successfully registered.", otpRedirect: true });
   }
 });
 
 router.post("/login", async (req, res) => {
-  // console.log(req.body)
   let user = await UserModel.findOne({ email: req.body.email });
-  let room = await messageModel.findOne({ userName: req.body.email }, 'room').sort('-time');
-  // if(room)console.log(room.room, typeof room.room);
   if (user) {
+    let room = await messageModel.findOne({ userName: req.body.email }, 'room').sort('-time');
     if (req.body.password == user.password) {
       let token;
       try {
@@ -167,6 +179,33 @@ router.get("/chats", async (req, res) => {
         .status(400)
         .send({ message: "An error occured, please login again." });
     }
+  }
+});
+
+router.post("/verifyAccount", async (req, res) => {
+  let user = await UserVerifyModel.findOne({ email: req.body.email });
+  if (user) {
+    if(user.verified){
+      return res.status(400).send({ message: "User Already Verified", homeRedirect: true });
+    }
+    if(user.otp == req.body.otp){
+      user.verified = true;
+      await user.save();
+      let newUser = new UserModel({
+        name: req.body.name,
+        email: req.body.email,
+        password: req.body.password,
+      });
+      await newUser.save();
+      return res.status(200).send({ message: "User Verified", homeRedirect: true });
+    }
+    else{
+      otpGenerator(req.body.email)
+      return res.status(400).send({ message: "Incorrect OTP. A new OTP has been sent to your mail.", homeRedirect: false });
+    }
+  }
+  else{
+    return res.status(404)
   }
 });
 

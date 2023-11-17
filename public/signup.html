@@ -9,8 +9,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css"
       integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk="
-      crossorigin="anonymous"
-    />
+      crossorigin="anonymous" />
     <link rel="stylesheet" href="css/style.css" />
     <title>ChatCord App</title>
   </head>
@@ -23,46 +22,59 @@
         <h1 style="text-align: center">Sign Up</h1>
         <br />
         <!-- <form> -->
-          <div class="form-control">
-            <label for="name">Name</label>
-            <input
-              type="text"
-              name="name"
-              id="name"
-              placeholder="Enter your name..."
-              required
-            />
-          </div>
-          <div class="form-control">
-            <label for="username">Username</label>
-            <input
-              type="email"
-              name="username"
-              id="username"
-              placeholder="Enter username..."
-              required
-            />
-          </div>
-          <div class="form-control">
-            <label for="password">Password</label>
-            <input type="password" name="password" id="password" required />
-          </div>
-          <div class="form-control">
-            <label for="password">Re-enter password</label>
-            <input
-              type="password"
-              name="reenterpassword"
-              id="reenterpassword"
-              required
-            />
-          </div>
-          <button type="submit" id="signupbutton" class="btn">Sign Up</button>
+        <div class="form-control">
+          <label for="name">Name</label>
+          <input
+            type="text"
+            name="name"
+            id="name"
+            placeholder="Enter your name..."
+            required />
+        </div>
+        <div class="form-control">
+          <label for="username">Username</label>
+          <input
+            type="email"
+            name="username"
+            id="username"
+            placeholder="Enter username..."
+            required />
+        </div>
+        <div class="form-control">
+          <label for="password">Password</label>
+          <input type="password" name="password" id="password" required />
+        </div>
+        <div class="form-control">
+          <label for="password">Re-enter password</label>
+          <input
+            type="password"
+            name="reenterpassword"
+            id="reenterpassword"
+            required />
+        </div>
+        <button type="submit" id="signupbutton" class="btn">Sign Up</button>
         <!-- </form> -->
       </main>
     </div>
     <script>
       var password = document.getElementById("password"),
         confirm_password = document.getElementById("reenterpassword");
+
+      function otpVerify(email) {
+        const mainContainer = document.querySelector(".join-main");
+        mainContainer.innerHTML = `
+        <h1 style="text-align: center">Verify Your Account</h1>
+        <br />
+        <div class="form-control">
+        <label for="name"
+        >An OTP has been sent to the email address (${email}) you provided.<br /><br />
+        Enter it here:
+        </label>
+        <input type="text" name="otp" id="name" required="" />
+        </div>
+        <button type="submit" id="verifybutton" class="btn">Verify</button>
+        `;
+      }
 
       function validatePassword() {
         if (password.value != confirm_password.value) {
@@ -71,51 +83,82 @@
           confirm_password.setCustomValidity("");
         }
       }
-
+      var username = document.getElementById("username");
       password.onchange = validatePassword;
       confirm_password.onchange = validatePassword;
-      $("#signupbutton").click(function(){
-        var name = document.getElementById("name")
-        var username = document.getElementById("username")
-        var password = document.getElementById("password")
+      $("#signupbutton").click(function () {
+        var name = document.getElementById("name");
+        var password = document.getElementById("password");
         var data = {
-          "name": name.value,
-          "email": username.value,
-          "password": password.value
-        }
+          name: name.value,
+          email: username.value,
+          password: password.value,
+        };
         $.ajax({
-        url: "http://localhost:4000/api/signup",
-        method: "POST",
-        data: JSON.stringify(data),
-        contentType: "application/json",
-        success: function (response) {
-          // const parsedData = JSON.parse(response);
-          // console.log("success signup ", response)
-          alert(response.message);
-          window.location.href = "index.html";
-        },
-        error: function (xhr, status, error) {
-          console.log(xhr)
-          if(xhr.hasOwnProperty("responseJSON")){
-            alert(xhr.responseJSON.message);
-          }
-          else{
-            alert(xhr.responseText);
-          }
-        },
+          url: "http://localhost:4000/api/signup",
+          method: "POST",
+          data: JSON.stringify(data),
+          contentType: "application/json",
+          success: function (response) {
+            // const parsedData = JSON.parse(response);
+            // console.log("success signup ", response)
+            alert(response.message);
+            if (response.otpRedirect) {
+              // otpVerify(username);
+            }
+            else{
+              window.location.href = "index.html";
+            }
+          },
+          error: function (xhr, status, error) {
+            console.log(xhr);
+            if (xhr.hasOwnProperty("responseJSON")) {
+              alert(xhr.responseJSON.message);
+            } else {
+              alert(xhr.responseText);
+            }
+          },
+        });
       });
-      })
-      // $.ajax({
-      //   url: "http://localhost:4000/api/listallusers",
-      //   method: "GET",
-      //   success: function (response) {
-      //     // const parsedData = JSON.parse(response);
-      //     console.log("success ajax ", response)
-      //   },
-      //   error: function (xhr, status, error) {
-      //     console.log(error, xhr)
-      //   },
-      // });
+      $("#verifybutton").click(function () {
+        var otp = document.getElementById("otp");
+        var data = {
+          email: username.value,
+          otp: otp.value,
+        };
+        $.ajax({
+          url: "http://localhost:4000/api/verifyAccount",
+          method: "POST",
+          data: JSON.stringify(data),
+          contentType: "application/json",
+          success: function (response) {
+            // const parsedData = JSON.parse(response);
+            // console.log("success signup ", response)
+            alert(response.message);
+            if (response.homeRedirect) {
+              window.location.href = "index.html";
+            }
+            else{
+              otp.value = ""
+            }
+          },
+          error: function (xhr, status, error) {
+            console.log(xhr);
+            if (xhr.hasOwnProperty("responseJSON")) {
+              alert(xhr.responseJSON.message);
+              if (xhr.responseJSON.homeRedirect) {
+              window.location.href = "index.html";
+            }
+            else{
+              otp.value = ""
+            }
+            } else {
+              alert(xhr.responseText);
+            }
+            
+          },
+        });
+      });
     </script>
   </body>
 </html>
