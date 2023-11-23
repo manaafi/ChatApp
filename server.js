@@ -6,7 +6,7 @@ try {
   const express = require("express");
   const mongoose = require("mongoose");
   // const cors = require("cors");
-  const jwtsecret = "secretkeyappearshere";
+  require('dotenv').config();
   const { privateRoomModel } = require("./models/rooms");
   const uuid = require("uuid");
   const Joi = require("joi");
@@ -48,7 +48,7 @@ try {
   app.all("/private/*", function (req, res, next) {
     // console.log(req.query.token);
     try {
-      if (jwt.verify(req.query.token, jwtsecret)) {
+      if (jwt.verify(req.query.token, process.env.JWT_SECRET)) {
         // next();
       }
     } catch (error) {
@@ -111,7 +111,7 @@ try {
       console.log("all users this user has texted to", onlineUsers[1]);
       console.log("of those who're online", onlineUsers[0]);
       socket.join(room);
-      if (firstTime) {
+      if (firstTime && room != "018b954f-fd29-726a-9a5e-f7586c0e47a3") {
         socket.emit("msg", await processMsg(adminName, "Welcome!", room));
         firstTime = false;
         // globalOnlineUsers.push(userName)
@@ -143,11 +143,6 @@ try {
         });
       }
 
-      // let onlineSockets = onlineUsers[0].length ? onlineUsers[0].map(user => {
-      //   let i = globalOnlineUsers.find(userObj => userObj.userName == user);
-      //   return i ? i.userId : null
-      // }) : null
-
       socket.emit("joinedUsers", {
         users: onlineUsers
       })
@@ -155,8 +150,6 @@ try {
 
       console.log("online sockets", onlineSockets);
       if (onlineSockets) {
-        // let toEmit = onlineUsers[0].map((user) => user.userName)
-        // console.log("emitting ", toEmit);
         io.to(onlineSockets).emit("onlinePing", {
           user: userName,
         });
@@ -166,7 +159,7 @@ try {
 
     async function privateRoomIdCheck(room) {
       let roomID = await privateRoomModel.findOne({ roomID: room });
-      console.log("roomIDcheck", roomID)
+      // console.log("roomIDcheck", roomID)
       let ret = roomID ? roomID : false;
       return ret;
     }
@@ -180,6 +173,24 @@ try {
       });
     });
 
+    socket.on('creategroup', async (groupName) => {
+      try {
+        socket.leaveAll();
+        let roomID = uuid.v4();
+        let currentUser = getOnlineUser(socket.id);
+        let newGroup = new privateRoomModel({
+          roomID: roomID,
+          users: [currentUser.userName],
+          isGroup: true,
+          groupName: groupName,
+        });
+        await newGroup.save();
+        
+      } catch (error) {
+        console.error("error creating group", error);
+      }
+    });
+
     socket.on("joinPrivateRoom", async ({ user1, user2 }) => {
       try {
         socket.leaveAll();
@@ -190,6 +201,7 @@ try {
           let privateRoom = new privateRoomModel({
             roomID: roomID,
             users: users,
+            isGroup: false,
           });
           await privateRoom.save();
           socket.join(roomID);

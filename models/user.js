@@ -20,29 +20,36 @@ const UserSchema = new mongoose.Schema({
         required: true,
         minlength: 5,
         maxlength: 1024
-    }
-});
-
-
-const UserVerifySchema = new mongoose.Schema({
-    email: {
-        type: String,
-        required: true,
-        minlength: 5,
-        maxlength: 255,
-        unique: true
+    },
+    verified:{
+        type: Boolean,
+        default: false
     },
     otp: {
         type: String,
     },
-    verified: {
-        type: Boolean,
-        required: true,
-        default: false
-    }
 });
 
-const UserVerifyModel = mongoose.model("userOtps", UserVerifySchema)
+
+// const UserVerifySchema = new mongoose.Schema({
+//     email: {
+//         type: String,
+//         required: true,
+//         minlength: 5,
+//         maxlength: 255,
+//         unique: true
+//     },
+//     otp: {
+//         type: String,
+//     },
+//     verified: {
+//         type: Boolean,
+//         required: true,
+//         default: false
+//     }
+// });
+
+// const UserVerifyModel = mongoose.model("userOtps", UserVerifySchema)
 const UserModel = mongoose.model("users", UserSchema)
 
 function validateUser(user) {
@@ -56,5 +63,5 @@ function validateUser(user) {
 }
 
 exports.UserModel = UserModel;
-exports.UserVerifyModel = UserVerifyModel;
+// exports.UserVerifyModel = UserVerifyModel;
 exports.validate = validateUser;

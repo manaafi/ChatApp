@@ -58,7 +58,9 @@
     </div>
     <script>
       var password = document.getElementById("password"),
-        confirm_password = document.getElementById("reenterpassword");
+        confirm_password = document.getElementById("reenterpassword")
+
+      var displayName = document.getElementById("name"), username = document.getElementById("username"), password = document.getElementById("password");
 
       function otpVerify(email) {
         const mainContainer = document.querySelector(".join-main");
@@ -70,7 +72,7 @@
         >An OTP has been sent to the email address (${email}) you provided.<br /><br />
         Enter it here:
         </label>
-        <input type="text" name="otp" id="name" required="" />
+        <input type="text" name="otp" id="otp" required="" />
         </div>
         <button type="submit" id="verifybutton" class="btn">Verify</button>
         `;
@@ -83,14 +85,11 @@
           confirm_password.setCustomValidity("");
         }
       }
-      var username = document.getElementById("username");
       password.onchange = validatePassword;
       confirm_password.onchange = validatePassword;
       $("#signupbutton").click(function () {
-        var name = document.getElementById("name");
-        var password = document.getElementById("password");
         var data = {
-          name: name.value,
+          name: displayName.value,
           email: username.value,
           password: password.value,
         };
@@ -104,27 +103,13 @@
             // console.log("success signup ", response)
             alert(response.message);
             if (response.otpRedirect) {
-              // otpVerify(username);
-            }
-            else{
-              window.location.href = "index.html";
-            }
-          },
-          error: function (xhr, status, error) {
-            console.log(xhr);
-            if (xhr.hasOwnProperty("responseJSON")) {
-              alert(xhr.responseJSON.message);
-            } else {
-              alert(xhr.responseText);
-            }
-          },
-        });
-      });
-      $("#verifybutton").click(function () {
+              otpVerify(username.value);
+              $("#verifybutton").click(function () {
         var otp = document.getElementById("otp");
         var data = {
           email: username.value,
           otp: otp.value,
+          password: password.value
         };
         $.ajax({
           url: "http://localhost:4000/api/verifyAccount",
@@ -159,6 +144,22 @@
           },
         });
       });
+            }
+            else{
+              window.location.href = "index.html";
+            }
+          },
+          error: function (xhr, status, error) {
+            console.log(xhr);
+            if (xhr.hasOwnProperty("responseJSON")) {
+              alert(xhr.responseJSON.message);
+            } else {
+              alert(xhr.responseText);
+            }
+          },
+        });
+      });
+      
     </script>
   </body>
 </html>

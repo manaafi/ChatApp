@@ -61,6 +61,23 @@
     </div>
     <script>
       let token = {token :localStorage.getItem("token")};
+
+      function otpVerify(email) {
+        const mainContainer = document.querySelector(".join-main");
+        mainContainer.innerHTML = `
+        <h1 style="text-align: center">Verify Your Account</h1>
+        <br />
+        <div class="form-control">
+        <label for="name"
+        >An OTP has been sent to the email address (${email}) you provided.<br /><br />
+        Enter it here:
+        </label>
+        <input type="text" name="otp" id="otp" required="" />
+        </div>
+        <button type="submit" id="verifybutton" class="btn">Verify</button>
+        `;
+      }
+
       if (token){
         $.ajax({
         url: "http://localhost:4000/api/tokenCheck",
@@ -72,7 +89,7 @@
         },
         error: function(xhr, status, error){
           console.log(xhr)
-          alert(xhr.responseJSON.message)
+          xhr.responseJSON? alert(xhr.responseJSON.message): null
           localStorage.clear()
         }})
       }
@@ -102,10 +119,53 @@
         },
         error: function (xhr, status, error) {
           alert(xhr.responseJSON.message)
+          if(xhr.responseJSON.otpRedirect){
+            otpVerify(username.value)
+            $("#verifybutton").click(function () {
+        var otp = document.getElementById("otp");
+        var data = {
+          email: username.value,
+          otp: otp.value,
+          password: password.value
+        };
+        $.ajax({
+          url: "http://localhost:4000/api/verifyAccount",
+          method: "POST",
+          data: JSON.stringify(data),
+          contentType: "application/json",
+          success: function (response) {
+            console.log("success otpcheck ", response)
+            alert(response.message);
+            if (response.homeRedirect) {
+              window.location.href = "index.html";
+            }
+            else{
+              otp.value = ""
+            }
+          },
+          error: function (xhr, status, error) {
+            console.log(xhr);
+            if (xhr.hasOwnProperty("responseJSON")) {
+              alert(xhr.responseJSON.message);
+              if (xhr.responseJSON.homeRedirect) {
+              window.location.href = "index.html";
+            }
+            else{
+              otp.value = ""
+            }
+            } else {
+              alert(xhr.responseText);
+            }
+            
+          },
+        });
+      });
+          }
           console.log(xhr)
         },
       });
     })
+    
     </script>
   </body>
 </html>

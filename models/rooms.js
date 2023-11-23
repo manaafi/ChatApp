@@ -1,20 +1,5 @@
 const mongoose = require("mongoose");
 
-const roomSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: true,
-    },
-    roomID: {
-        type: String,
-        required: true,
-    },
-    users: {
-        type: String,
-        required: true,
-    }
-})
-
 const privateRoomSchema = new mongoose.Schema({
     roomID: {
         type: String,
@@ -23,11 +8,20 @@ const privateRoomSchema = new mongoose.Schema({
     users: {
         type: [],
         required: true,
-    }
+    },
+    isGroup: {
+        type: Boolean,
+        required: true,
+        // default: false,
+    },
+    groupName: {
+        type: String,
+        required: function() {
+            return this.isGroup;
+        },
+    },
 })
 
-// const roomModel = mongoose.model("message", roomSchema)
 const privateRoomModel = mongoose.model("privateRoomIds", privateRoomSchema)
 
-// exports.roomModel = roomModel; 
 exports.privateRoomModel = privateRoomModel; 

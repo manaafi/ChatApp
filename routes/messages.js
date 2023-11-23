@@ -4,11 +4,11 @@ const router = express.Router();
 const { messageModel } = require("../models/messages");
 const {fetchGifs} = require("../utils/messages");
 
-const jwtsecret = "secretkeyappearshere";
+require('dotenv').config();
 
 router.get("/retrieveHistory", async (req, res) => {
   try {
-    if (jwt.verify(req.query.token, jwtsecret)) {
+    if (jwt.verify(req.query.token, process.env.JWT_SECRET)) {
       allMessages = await messageModel.find({ room: req.query.room });
       res.status(200).send(allMessages);
     }
@@ -30,7 +30,7 @@ router.get("/retrieveHistory", async (req, res) => {
 router.get("/searchGifs", async (req, res) => {
   console.log(req.query.token, req.query.search)
   try {
-    if (jwt.verify(req.query.token, jwtsecret)) {
+    if (jwt.verify(req.query.token, process.env.JWT_SECRET)) {
       const gifUrls = await fetchGifs(req.query.search)
       res.status(200).send(gifUrls)
     }

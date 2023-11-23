@@ -18,9 +18,27 @@ const addRoomBtn = document.getElementById("addRoomBtn");
 const addRoomName = document.getElementById("addRoomName");
 const searchDropdown = document.getElementById("searchDropdown");
 const searchUser = document.getElementById("searchUser");
+const newGroupBtn = document.getElementById("newGroupBtn");
+const newGroupTextbox = document.getElementById("newGroupTextbox");
 
 searchUser.value = ""
 attachmentDropdown.value = "dummy";
+
+newGroupBtn.addEventListener('click', function() {
+  var textbox = document.createElement('input');
+  textbox.type = 'text';
+  textbox.placeholder = 'Enter group name';
+  textbox.id = 'newGroupTextbox';
+  document.querySelector('.chat-sidebar').appendChild(textbox);
+});
+
+
+newGroupTextbox.addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') {
+    socket.emit('creategroup', newGroupTextbox.value);
+    newGroupTextbox.value = '';
+  }
+});
 
 addRoomBtn.addEventListener("click", function (e) {
   e.preventDefault();
