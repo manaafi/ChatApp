@@ -32,13 +32,13 @@ async function otpGenerator(user) {
     text: 'Your OTP is: ' + user.otp
   };
   
-  transporter.sendMail(mailOptions, function(error, info){
-    if (error) {
-      console.log(error);
-    } else {
-      console.log('Email sent: ' + info.response);
-    }
-  });
+  // transporter.sendMail(mailOptions, function(error, info){
+  //   if (error) {
+  //     console.log(error);
+  //   } else {
+  //     console.log('Email sent: ' + info.response);
+  //   }
+  // });
 }
  
 router.post("/signup", async (req, res) => {

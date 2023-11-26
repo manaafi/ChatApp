@@ -22,7 +22,7 @@
       </div> -->
       <header class="chat-header">
         <h1><i class="fas fa-smile"></i> ChatCord</h1>
-        <button id="newGroupBtn" class="btn">New Group Chat</button>
+        
         <div
           class="chat-form-container"
           style="
@@ -52,13 +52,22 @@
           <a href="#tools">Tools</a> -->
           </div>
         </div>
-        <a
+        <!-- <a
           href="index.html"
           onclick="localStorage.clear();"
           class="btn"
           id="signOut"
           >Log Out</a
-        >
+        > -->
+        <div class="dropdown">
+          <button class="btn" id="dropdownMenuButton">
+            <i class="fas fa-ellipsis-v"></i>
+          </button>
+          <div class="dropdown-menu" id="dropdownMenu">
+            <a id="newGroupBtn" class="btn">New Group Chat</a>
+            <a href="index.html" onclick="localStorage.clear();" class="btn" id="signOut">Log Out</a>
+          </div>
+        </div>
       </header>
       <main class="chat-main">
         <div class="chat-sidebar">
@@ -84,6 +93,8 @@
           <div id="room-name"></div>
           <h3><i class="fas fa-users"></i>Users</h3>
           <ul id="users"></ul>
+          <input type="text" placeholder="Enter group name" id="newGroupName" style="display: none;">
+          <button id="cancelNewGroup" style="display: none;">Cancel</button>
         </div>
         <div class="chat-messages"></div>
       </main>

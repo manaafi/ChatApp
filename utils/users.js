@@ -31,7 +31,49 @@ async function onlineTextedUsers(user, globalOnlineUsers) {
 
 async function textedUsers(user) {
   let ret = []
-   await privateRoomModel.aggregate(
+  // await privateRoomModel.aggregate(  //old aggregate
+  //   [
+  //     {
+  //       '$match': {
+  //         'users': user
+  //       }
+  //     }, {
+  //       '$lookup': {
+  //         'as': 'messages', 
+  //         'from': 'messages', 
+  //         'foreignField': 'room', 
+  //         'localField': 'roomID'
+  //       }
+  //     }, {
+  //       '$sort': {
+  //         'messages.time': -1
+  //       }
+  //     }, {
+  //       '$project': {
+  //         'roomID': '$roomID', 
+  //         'users': {
+  //           '$filter': {
+  //             'input': '$users', 
+  //             'as': 'user', 
+  //             'cond': {
+  //               '$ne': [
+  //                 '$$user', user
+  //               ]
+  //             }
+  //           }
+  //         }
+  //       }
+  //     }
+  //   ])
+  //   .then((users) => {
+  //     for (let i of users){
+  //       // if(i.users.length > 0){
+  //       ret.push(i.users[0]);
+  //       // }
+  //     }
+  //   })
+  //new aggregate
+  await privateRoomModel.aggregate(
     [
       {
         '$match': {
@@ -43,6 +85,12 @@ async function textedUsers(user) {
           'from': 'messages', 
           'foreignField': 'room', 
           'localField': 'roomID'
+        }
+      }, {
+        '$match': {
+          'messages': {
+            '$ne': []
+          }
         }
       }, {
         '$sort': {
@@ -67,7 +115,12 @@ async function textedUsers(user) {
     ])
     .then((users) => {
       for (let i of users){
+        if(i.users.length){
         ret.push(i.users[0]);
+        }
+        else{
+          ret.push(user);
+        }
       }
     })
   console.log("textedUsers: ", ret)

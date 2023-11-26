@@ -21,7 +21,7 @@ async function processMsg(userName, text, room, image) {
     userName: userName,
     message: text,
     time: currentTime,
-    asset: image ? fileName : ""
+    asset: fileName
   });
   if (text == "Welcome!" && userName == "Admin") {
     return model;

@@ -19,25 +19,59 @@ const addRoomName = document.getElementById("addRoomName");
 const searchDropdown = document.getElementById("searchDropdown");
 const searchUser = document.getElementById("searchUser");
 const newGroupBtn = document.getElementById("newGroupBtn");
-const newGroupTextbox = document.getElementById("newGroupTextbox");
+const dropdownMenu = document.getElementById('dropdownMenu')
 
 searchUser.value = ""
 attachmentDropdown.value = "dummy";
 
-newGroupBtn.addEventListener('click', function() {
-  var textbox = document.createElement('input');
-  textbox.type = 'text';
-  textbox.placeholder = 'Enter group name';
-  textbox.id = 'newGroupTextbox';
-  document.querySelector('.chat-sidebar').appendChild(textbox);
+if (tokenLS){
+  $.ajax({
+  url: "http://localhost:4000/api/tokenCheck",
+  method: "POST",
+  data: JSON.stringify({token: tokenLS}),
+  contentType: "application/json",
+  success: function (response) {
+    return;
+  },
+  error: function(xhr, status, error){
+    console.log(xhr)
+    xhr.responseJSON? alert(xhr.responseJSON.message): null
+    localStorage.clear()
+    window.location.href = 'index.html'
+  }})
+} else{
+  window.location.href = 'index.html'
+}
+
+
+document.getElementById('dropdownMenuButton').addEventListener('click', function (event) {
+  event.stopPropagation();
+  dropdownMenu.style.display = 'block';
+});
+
+window.addEventListener('click', function () {
+  if (searchUser == document.activeElement || dropdownMenu == document.activeElement) {
+    return;
+}
+  dropdownMenu.style.display = 'none';
+  searchDropdown.style.display = "none";
 });
 
 
-newGroupTextbox.addEventListener('keypress', function(e) {
-  if (e.key === 'Enter') {
-    socket.emit('creategroup', newGroupTextbox.value);
-    newGroupTextbox.value = '';
+newGroupBtn.addEventListener('click', function () {
+  if(document.getElementById('newGroupName').style.display == 'none'){
+    document.getElementById('newGroupName').style.display = 'unset';
+    document.getElementById('cancelNewGroup').style.display = 'unset';
   }
+  else{
+    document.getElementById('newGroupName').style.display = 'none';
+    document.getElementById('cancelNewGroup').style.display = 'none';
+  }
+});
+
+document.getElementById("cancelNewGroup").addEventListener('click', function () {
+  document.getElementById('newGroupName').style.display = 'none';
+  document.getElementById('cancelNewGroup').style.display = 'none';
 });
 
 addRoomBtn.addEventListener("click", function (e) {
@@ -119,6 +153,9 @@ socket.on("msg", (message) => {
 });
 
 chatboxdom.addEventListener("submit", (e) => {
+  if (roomLS == "018b954f-fd29-726a-9a5e-f7586c0e47a3") {
+    return;
+  }
   e.preventDefault();
   let msg = e.target.elements.msg.value;
   if (e.target.elements.imageFile.files.length) {
@@ -152,9 +189,9 @@ socket.on("offlinePing", async ({ user }) => {
 
 function joinRoom(room) {
   let currentOpenUser = userList.querySelector('li[style="font-weight: bold;"]');
-  if(currentOpenUser){
+  if (currentOpenUser) {
     currentOpenUser.removeAttribute('style');
-  } 
+  }
   if (room) {
     roomLS = room;
     localStorage.setItem("room", room)
@@ -183,12 +220,14 @@ function joinRoom(room) {
 
 function activateSearch(query) {
   // console.log(query);
-  if (searchUser.value.length < 2) {
+  if (searchUser.value.length <= 2) {
     searchDropdown.innerHTML = `<p style="color: black; ">Start typing...</p>`
     searchDropdown.style.display = "block"
+    return
   }
+  searchDropdown.style.display = "block"
   if (query) {
-    if (query.length > 2) {
+    // if (query.length > 2) {
       let data = { userName: query, token: tokenLS };
       //  console.log(data)
       searchDropdown.innerHTML = ""
@@ -208,7 +247,7 @@ function activateSearch(query) {
               searchDropdown.innerHTML += `<a href='javascript:joinDM("${i.email}");'>${i.email}</a><br>`
             }
           }
-          searchDropdown.innerHTML =  selfEmail + searchDropdown.innerHTML
+          searchDropdown.innerHTML = selfEmail + searchDropdown.innerHTML
         },
         error: function (xhr, status, error) {
           if (xhr.hasOwnProperty("responseJSON")) {
@@ -219,7 +258,7 @@ function activateSearch(query) {
           }
         },
       });
-    }
+    // }
   }
 }
 
@@ -255,6 +294,7 @@ function restoreHistory(room) {
       }
     },
     error: function (xhr, status, error) {
+      alert("ERROR")
       if (xhr.hasOwnProperty("responseJSON")) {
         alert(xhr.responseJSON.message);
         localStorage.clear();
@@ -335,15 +375,18 @@ async function isPrivateChat(room) {
 async function outputRooms(rooms, firstLogin) {
   roomNames.textContent = ""
   // console.log("outputRooms", rooms)
-  for (let i of rooms) {
-    let roomTag = document.createElement("a");
+  let roomTag = document.createElement("a");
     roomTag.style.color = "white";
-    // console.log("outputRooms i", i)
     if (firstLogin || !rooms.length) {
       roomTag.href = `javascript:void(0);`
       roomTag.innerHTML = `<h2 style="margin-bottom: 0px;">Join or create a room using the add button above</h2><hr style=" visibility:hidden;">`;
+      roomNames.appendChild(roomTag);
     }
-    else if (await isPrivateChat(i)) {
+  for (let i of rooms) {
+    
+    // console.log("outputRooms i", i)
+    
+     if (await isPrivateChat(i)) {
       // console.log("continued", i)
       continue;
     }
@@ -368,7 +411,7 @@ async function outputRooms(rooms, firstLogin) {
 }
 
 async function outputUsers(users, onlineFlag) {
-  console.log("Users", users)
+  // console.log("Users", users)
   // userList.innerHTML = "";
   listItems = userList.getElementsByTagName("li");
   if (typeof users == 'string') {
@@ -379,31 +422,31 @@ async function outputUsers(users, onlineFlag) {
       }
     }
     // }
-    return  
+    return
   }
   let isLastChatPrivate = await isPrivateChat(roomLS)
   if (isLastChatPrivate) {
     const lastTextedUser = isLastChatPrivate.users.filter(user => user != userNameLS);
-    console.log("lastTextedUser",lastTextedUser[0])
+    console.log("lastTextedUser", lastTextedUser[0])
     userList.innerHTML = `${users[1].map((user) => {
-      if (users[0].includes(user)) { 
-        if(user == lastTextedUser[0]){
+      if (users[0].includes(user)) {
+        if (user == lastTextedUser[0]) {
           return `<li style='font-weight: bold;'>${user}<span class = 'online'> ●</span></li>`
         }
-        return `<a style="color: white;" href="javascript:joinDM('${user}');"><li>${user}<span class = "online"> ●</span></li></a>` 
+        return `<a style="color: white;" href="javascript:joinDM('${user}');"><li>${user}<span class = "online"> ●</span></li></a>`
       }
       else {
-        if(user == lastTextedUser[0]){
+        if (user == lastTextedUser[0]) {
           return `<li style='font-weight: bold;'>${user}</li>`
         }
-        return `<a style="color: white;" href="javascript:joinDM('${user}');"><li>${user}</li></a>` 
+        return `<a style="color: white;" href="javascript:joinDM('${user}');"><li>${user}</li></a>`
       }
     }).join("")}`;
   }
-  else{
+  else {
     userList.innerHTML = `${users[1].map((user) => {
-      if (users[0].includes(user)) { 
-        return `<a style="color: white;" href="javascript:joinDM('${user}');"><li>${user}<span class = "online"> ●</span></li></a>` 
+      if (users[0].includes(user)) {
+        return `<a style="color: white;" href="javascript:joinDM('${user}');"><li>${user}<span class = "online"> ●</span></li></a>`
       }
       else { return `<a style="color: white;" href="javascript:joinDM('${user}');"><li>${user}</li></a>` }
     }).join("")}`;

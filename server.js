@@ -48,9 +48,7 @@ try {
   app.all("/private/*", function (req, res, next) {
     // console.log(req.query.token);
     try {
-      if (jwt.verify(req.query.token, process.env.JWT_SECRET)) {
-        // next();
-      }
+      jwt.verify(req.query.token, process.env.JWT_SECRET)
     } catch (error) {
       console.log("PRIVATE ACCESS ERROR", error);
       // res.status(401);
@@ -311,7 +309,7 @@ try {
         }
       });
 
-
+      socket.join(room);
       const currentRooms = await currentUserRooms(userName);
       callback(currentRooms);
 

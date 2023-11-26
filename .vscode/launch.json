@@ -27,6 +27,13 @@
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}\\server.js"
+        },
+        {
+            "type": "msedge",
+            "name": "localhost:4000",
+            "request": "launch",
+            "webRoot": "${workspaceFolder}",
+            "url": "localhost:4000"
         }
     ]
 }
