@@ -58,21 +58,37 @@ window.addEventListener('click', function () {
 });
 
 
+// newGroupBtn.addEventListener('click', function () {
+//   if(document.getElementById('newGroupName').style.display == 'none'){
+//     document.getElementById('newGroupName').style.display = 'unset';
+//     document.getElementById('cancelNewGroup').style.display = 'unset';
+//   }
+//   else{
+//     document.getElementById('newGroupName').style.display = 'none';
+//     document.getElementById('cancelNewGroup').style.display = 'none';
+//     return
+//   }
+// });
+
 newGroupBtn.addEventListener('click', function () {
-  if(document.getElementById('newGroupName').style.display == 'none'){
-    document.getElementById('newGroupName').style.display = 'unset';
-    document.getElementById('cancelNewGroup').style.display = 'unset';
+  if(document.getElementById('newGroupPopup').style.display == 'none'){
+    document.getElementById('newGroupPopup').style.display = 'unset';
   }
   else{
-    document.getElementById('newGroupName').style.display = 'none';
-    document.getElementById('cancelNewGroup').style.display = 'none';
+    document.getElementById('newGroupPopup').style.display = 'none';
+    return
   }
 });
 
 document.getElementById("cancelNewGroup").addEventListener('click', function () {
-  document.getElementById('newGroupName').style.display = 'none';
-  document.getElementById('cancelNewGroup').style.display = 'none';
+  document.getElementById('newGroupPopup').style.display = 'none';
+  // document.getElementById('cancelNewGroup').style.display = 'none';
 });
+
+// document.getElementById("cancelNewGroup").addEventListener('click', function () {
+//   document.getElementById('newGroupName').style.display = 'none';
+//   document.getElementById('cancelNewGroup').style.display = 'none';
+// });
 
 addRoomBtn.addEventListener("click", function (e) {
   e.preventDefault();
@@ -219,8 +235,11 @@ function joinRoom(room) {
 
 
 function activateSearch(query) {
+  const currentTextbox = document.activeElement
   // console.log(query);
-  if (searchUser.value.length <= 2) {
+  // searchDropdown should be positioned below currentTextBox
+  searchDropdown.style.top = currentTextbox.offsetTop + currentTextbox.offsetHeight + "px"
+  if (currentTextbox.value.length <= 2) {
     searchDropdown.innerHTML = `<p style="color: black; ">Start typing...</p>`
     searchDropdown.style.display = "block"
     return
