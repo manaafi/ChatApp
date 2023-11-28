@@ -29,12 +29,11 @@
             <input type="text" id="groupName" name="groupName" required>
 
             <label for="addUsers">Add Users:</label>
-            <input type="text" id="addUsers" name="addUsers" oninput="activateSearch(addUsers.value);">
-
+            <input type="text" id="addUsers" name="addUsers" oninput="activateSearch(addUsers.value, true);">
+            <h4>Selected users:</h4>
             <div id="selectedUsers">
-              
             </div>
-
+            <br>
             <input type="submit" value="Create Group">
           </form>
         </div>

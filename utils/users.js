@@ -18,15 +18,15 @@ async function joinUser(id, userName, room) {
 }
 
 async function onlineTextedUsers(user, globalOnlineUsers) {
-  let users = await textedUsers(user);
+  let allTextedUsers = await textedUsers(user);
   let onlineUsers = [];
-  for (let i of users) {
+  for (let i of allTextedUsers) {
     if (globalOnlineUsers.find(u => u.userName === i)) {
       onlineUsers.push(i);
     }
   }
   // console.log("onlineTextedUsers: ",onlineUsers, "textedUsers: ", users)
-  return [onlineUsers, users];
+  return [onlineUsers, allTextedUsers];
 }
 
 async function textedUsers(user) {
@@ -100,25 +100,51 @@ async function textedUsers(user) {
         '$project': {
           'roomID': '$roomID', 
           'users': {
-            '$filter': {
-              'input': '$users', 
-              'as': 'user', 
-              'cond': {
-                '$ne': [
-                  '$$user', user
+            '$cond': {
+              'if': {
+                '$eq': [
+                  '$isGroup', false
                 ]
-              }
+              }, 
+              'then': {
+                '$filter': {
+                  'input': '$users', 
+                  'as': 'user', 
+                  'cond': {
+                    '$ne': [
+                      '$$user', user
+                    ]
+                  }
+                }
+              }, 
+              'else': '$users'
+            }
+          }, 
+          'groupName': {
+            '$cond': {
+              'if': {
+                '$eq': [
+                  '$isGroup', true
+                ]
+              }, 
+              'then': '$groupName', 
+              'else': '$$REMOVE'
             }
           }
         }
       }
     ])
     .then((users) => {
-      for (let i of users){
-        if(i.users.length){
-        ret.push(i.users[0]);
+      for (let i of users) {
+        if (i.users.length) {
+          if (i.groupName) {
+            ret.push([i.groupName].concat(i.users))
+          }
+          else {
+            ret.push(i.users);
+          }
         }
-        else{
+        else {
           ret.push(user);
         }
       }

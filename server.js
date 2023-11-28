@@ -5,6 +5,7 @@ try {
   const http = require("http");
   const express = require("express");
   const mongoose = require("mongoose");
+  const { UserModel } = require("./models/user");
   // const cors = require("cors");
   require('dotenv').config();
   const { privateRoomModel } = require("./models/rooms");
@@ -191,6 +192,10 @@ try {
 
     socket.on("joinPrivateRoom", async ({ user1, user2 }) => {
       try {
+        //check if both user exists, or just a bogus emit
+        if (!UserModel.findOne({$and: [{email: user1},{email: user2}]})) {
+          return
+        }
         socket.leaveAll();
         const users = [user1, user2].sort();
         let roomID = await privateRoomModel.findOne({ users: users });
@@ -312,9 +317,20 @@ try {
       socket.join(room);
       const currentRooms = await currentUserRooms(userName);
       callback(currentRooms);
-
-      // callback(await currentUserRooms(userName))
     });
+    socket.on('createGroup', async ({groupName, groupUsers}) => {
+      let roomID = uuid.v4();
+      let currentUser = getOnlineUser(socket.id);
+      let newGroup = new privateRoomModel({
+        roomID: roomID,
+        users: groupUsers,
+        isGroup: true,
+        groupName: groupName,
+        groupAdmins: [currentUser.userName],
+      });
+      await newGroup.save();
+     processMsg(currentUser.userName, `${currentUser.userName} has created group ${groupName}`, roomID)
+    })
   });
 
   const port = process.env.port || 4000;

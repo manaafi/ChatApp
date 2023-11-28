@@ -20,29 +20,45 @@ const searchDropdown = document.getElementById("searchDropdown");
 const searchUser = document.getElementById("searchUser");
 const newGroupBtn = document.getElementById("newGroupBtn");
 const dropdownMenu = document.getElementById('dropdownMenu')
+const addUsers = document.getElementById('addUsers')
 
 searchUser.value = ""
 attachmentDropdown.value = "dummy";
 
-if (tokenLS){
+if (tokenLS) {
   $.ajax({
-  url: "http://localhost:4000/api/tokenCheck",
-  method: "POST",
-  data: JSON.stringify({token: tokenLS}),
-  contentType: "application/json",
-  success: function (response) {
-    return;
-  },
-  error: function(xhr, status, error){
-    console.log(xhr)
-    xhr.responseJSON? alert(xhr.responseJSON.message): null
-    localStorage.clear()
-    window.location.href = 'index.html'
-  }})
-} else{
+    url: "http://localhost:4000/api/tokenCheck",
+    method: "POST",
+    data: JSON.stringify({ token: tokenLS }),
+    contentType: "application/json",
+    success: function (response) {
+      return;
+    },
+    error: function (xhr, status, error) {
+      console.log(xhr)
+      xhr.responseJSON ? alert(xhr.responseJSON.message) : null
+      localStorage.clear()
+      window.location.href = 'index.html'
+    }
+  })
+} else {
   window.location.href = 'index.html'
 }
 
+document.getElementById("newGroupForm").addEventListener('submit', function (event) {
+  event.preventDefault();
+  const allUsersAdded = selectedUsers.getElementsByTagName("a");
+  if (!allUsersAdded.length) {
+    alert("Please add at least one user to the group");
+    return
+  }
+  let users = [];
+  for (let i = 0; i < allUsersAdded.length; i++) {
+    users.push(allUsersAdded[i].textContent);
+  }
+  users.push(userNameLS);
+  socket.emit('createGroup', { groupName: document.getElementById("groupName").value, groupUsers: users })
+})
 
 document.getElementById('dropdownMenuButton').addEventListener('click', function (event) {
   event.stopPropagation();
@@ -52,7 +68,7 @@ document.getElementById('dropdownMenuButton').addEventListener('click', function
 window.addEventListener('click', function () {
   if (searchUser == document.activeElement || dropdownMenu == document.activeElement) {
     return;
-}
+  }
   dropdownMenu.style.display = 'none';
   searchDropdown.style.display = "none";
 });
@@ -71,10 +87,10 @@ window.addEventListener('click', function () {
 // });
 
 newGroupBtn.addEventListener('click', function () {
-  if(document.getElementById('newGroupPopup').style.display == 'none'){
+  if (document.getElementById('newGroupPopup').style.display == 'none') {
     document.getElementById('newGroupPopup').style.display = 'unset';
   }
-  else{
+  else {
     document.getElementById('newGroupPopup').style.display = 'none';
     return
   }
@@ -82,6 +98,7 @@ newGroupBtn.addEventListener('click', function () {
 
 document.getElementById("cancelNewGroup").addEventListener('click', function () {
   document.getElementById('newGroupPopup').style.display = 'none';
+  selectedUsers.innerHTML = "";
   // document.getElementById('cancelNewGroup').style.display = 'none';
 });
 
@@ -234,7 +251,7 @@ function joinRoom(room) {
 }
 
 
-function activateSearch(query) {
+function activateSearch(query, newGroupContext) {
   const currentTextbox = document.activeElement
   // console.log(query);
   // searchDropdown should be positioned below currentTextBox
@@ -247,39 +264,82 @@ function activateSearch(query) {
   searchDropdown.style.display = "block"
   if (query) {
     // if (query.length > 2) {
-      let data = { userName: query, token: tokenLS };
-      //  console.log(data)
-      searchDropdown.innerHTML = ""
-      $.ajax({
-        url: "http://localhost:4000/api/listallusers",
-        method: "GET",
-        data: data,
-        contentType: "application/json",
-        success: function (response) {
-          // console.log("response ajax",response)
-          let selfEmail = ""
-          for (i of response) {
-            if (i.email == userNameLS) {
-              selfEmail = `<a href='javascript:joinDM("${i.email}");'>${i.email} (You)</a><br>`
-            }
-            else {
-              searchDropdown.innerHTML += `<a href='javascript:joinDM("${i.email}");'>${i.email}</a><br>`
-            }
-          }
-          searchDropdown.innerHTML = selfEmail + searchDropdown.innerHTML
-        },
-        error: function (xhr, status, error) {
-          if (xhr.hasOwnProperty("responseJSON")) {
-            console.log(xhr.responseJSON.message);
+    let data = { userName: query, token: tokenLS };
+    //  console.log(data)
+    searchDropdown.innerHTML = ""
+    $.ajax({
+      url: "http://localhost:4000/api/listallusers",
+      method: "GET",
+      data: data,
+      contentType: "application/json",
+      success: function (response) {
+        // console.log("response ajax",response)
+        let selfEmail = ""
+        for (i of response) {
+          if (i.email == userNameLS) {
+            selfEmail = newGroupContext ? "" : `<a href='javascript:joinDM("${i.email}");'>${i.email} (You)</a><br>`
           }
           else {
-            console.log(xhr);
+            newGroupContext ? searchDropdown.innerHTML += `<a href='javascript:newGroupMembersHandler("${i.email}");'>${i.email}</a><br>` : searchDropdown.innerHTML += `<a href='javascript:joinDM("${i.email}");'>${i.email}</a><br>`
           }
-        },
-      });
+        }
+        searchDropdown.innerHTML = selfEmail + searchDropdown.innerHTML
+      },
+      error: function (xhr, status, error) {
+        if (xhr.hasOwnProperty("responseJSON")) {
+          console.log(xhr.responseJSON.message);
+        }
+        else {
+          console.log(xhr);
+        }
+      },
+    });
     // }
   }
 }
+
+function newGroupMembersHandler(user) {
+  addUsers.value = "";
+  const allUsersAdded = selectedUsers.getElementsByTagName("a");
+
+  for (let i = 0; i < allUsersAdded.length; i++) {
+    if (allUsersAdded[i].textContent == user) {
+      alert("User already added");
+      return
+    }
+  }
+  const newMember = document.createElement("a");
+  newMember.innerHTML = user + "<br>";
+  newMember.addEventListener("mouseover", function () {
+    newMember.innerText = user + " (click to remove)\n";
+    newMember.style.color = "red";
+  });
+  newMember.addEventListener("mouseout", function () {
+    newMember.innerText = user + "\n";
+    newMember.style.color = "";
+  });
+  newMember.addEventListener("click", function () {
+    newMember.remove();
+  });
+  selectedUsers.appendChild(newMember);
+  
+
+  // document.getElementById("selectedUsers").innerHTML += `<a>${user}</a><br>`;
+  // const selectedUser = document.querySelector(`#selectedUsers a:last-child`);
+  // selectedUser.addEventListener("mouseover", function() {
+  //   selectedUser.innerText = `${user} (click to remove)`;
+  //   selectedUser.style.color = "red";
+  // });
+
+  // selectedUser.addEventListener("mouseout", function() {
+  //   selectedUser.innerText = user;
+  //   selectedUser.style.color = "";
+  // });
+
+  searchDropdown.style.display = "none";
+}
+
+
 
 function joinDM(user) {
   // let currentOpenUser = userList.querySelector('li[style="font-weight: bold;"]');
@@ -296,11 +356,12 @@ function joinDM(user) {
   // console.log(listItems);
   searchDropdown.style.display = "none";
   socket.emit('joinPrivateRoom', { user1: userNameLS, user2: user });
+
 }
 
 function restoreHistory(room) {
   chatdiv.innerHTML = ""
-  console.log("restoreHistory", room)
+  // console.log("restoreHistory", room)
   let data = { room: room, token: tokenLS };
   $.ajax({
     url: "http://localhost:4000/api/retrieveHistory",
@@ -395,17 +456,17 @@ async function outputRooms(rooms, firstLogin) {
   roomNames.textContent = ""
   // console.log("outputRooms", rooms)
   let roomTag = document.createElement("a");
-    roomTag.style.color = "white";
-    if (firstLogin || !rooms.length) {
-      roomTag.href = `javascript:void(0);`
-      roomTag.innerHTML = `<h2 style="margin-bottom: 0px;">Join or create a room using the add button above</h2><hr style=" visibility:hidden;">`;
-      roomNames.appendChild(roomTag);
-    }
+  roomTag.style.color = "white";
+  if (firstLogin || !rooms.length) {
+    roomTag.href = `javascript:void(0);`
+    roomTag.innerHTML = `<h2 style="margin-bottom: 0px;">Join or create a room using the add button above</h2><hr style=" visibility:hidden;">`;
+    roomNames.appendChild(roomTag);
+  }
   for (let i of rooms) {
-    
+
     // console.log("outputRooms i", i)
-    
-     if (await isPrivateChat(i)) {
+
+    if (await isPrivateChat(i)) {
       // console.log("continued", i)
       continue;
     }
@@ -446,8 +507,11 @@ async function outputUsers(users, onlineFlag) {
   let isLastChatPrivate = await isPrivateChat(roomLS)
   if (isLastChatPrivate) {
     const lastTextedUser = isLastChatPrivate.users.filter(user => user != userNameLS);
-    console.log("lastTextedUser", lastTextedUser[0])
+    // console.log("lastTextedUser", lastTextedUser[0])
     userList.innerHTML = `${users[1].map((user) => {
+      if (user.length > 1 && typeof user != "string"){
+        return `<a style="color: white;" href="javascript:void(0);"><li>Group: ${user[0]}</li></a>`
+      }
       if (users[0].includes(user)) {
         if (user == lastTextedUser[0]) {
           return `<li style='font-weight: bold;'>${user}<span class = 'online'> ●</span></li>`

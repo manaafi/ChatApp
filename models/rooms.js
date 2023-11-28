@@ -20,6 +20,12 @@ const privateRoomSchema = new mongoose.Schema({
             return this.isGroup;
         },
     },
+    groupAdmins: {
+        type: [],
+        required: function() {
+            return this.isGroup;
+        },
+    },
 })
 
 const privateRoomModel = mongoose.model("privateRoomIds", privateRoomSchema)
